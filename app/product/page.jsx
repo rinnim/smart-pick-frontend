@@ -85,7 +85,7 @@ const ProductsPage = () => {
       };
 
       const response = await axios.get(
-        "http://localhost:5000/api/product/find",
+        "https://smart-pick-backend.onrender.com/api/product/find",
         {
           params: filterParams,
         }
