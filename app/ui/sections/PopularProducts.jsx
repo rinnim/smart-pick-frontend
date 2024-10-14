@@ -15,7 +15,7 @@ const PopularProducts = () => {
   const fetchProducts = async () => {
     setLoading(true);
     const response = await axios.get(
-      `http://localhost:5000/api/product/find?limit=12`
+      `https://smart-pick-backend.onrender.com/api/product/find?limit=12`
     );
     setProducts(response.data.products);
     setLoading(false);
