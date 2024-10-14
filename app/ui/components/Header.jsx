@@ -187,7 +187,7 @@ const Header = () => {
   return (
     <div className="w-full bg-white  md:sticky md:top-0 z-50">
       {/* Header */}
-      <div className="max-w-screen-xl bg-red-500 mx-auto py-4 flex flex-col gap-5 md:flex-row items-center justify-between px-4 lg:px-0">
+      <div className="max-w-screen-xl mx-auto py-4 flex flex-col gap-5 md:flex-row items-center justify-between px-4 lg:px-0">
         {/* Logo */}
         <Link href={"/"}>
           {/* <img src={logo} alt="logo" className="w-44" /> */}
