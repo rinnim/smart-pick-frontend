@@ -240,7 +240,7 @@ const Header = () => {
         </div>
       </div>
       {/* Categories */}
-      <div className="text-white flex items-center justify-center py-4 flex-wrap ">
+      <div className="text-white max-w-screen-xl mx-auto flex items-center justify-center py10 flex-wrap  ">
         {categories.map((category, index) => (
           <div key={index}>
             <Menu as="div" className="relative flex-shrink-0">
