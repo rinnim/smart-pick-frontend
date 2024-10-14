@@ -186,19 +186,20 @@ const Header = () => {
   };
   return (
     <div className="w-full bg-white  md:sticky md:top-0 z-50">
-      <div className="max-w-screen-xl mx-auto h-20 flex items-center justify-between px-4 lg:px-0">
+      {/* Header */}
+      <div className="max-w-screen-xl bg-red-500 mx-auto py-4 flex flex-col gap-5 md:flex-row items-center justify-between px-4 lg:px-0">
         {/* Logo */}
         <Link href={"/"}>
           {/* <img src={logo} alt="logo" className="w-44" /> */}
           <h1 className="text-2xl font-bold">SmartPick</h1>
         </Link>
         {/* SearchBar */}
-        <div className=" md:inline-flex max-w-3xl w-full ">
+        <div className="flex max-w-3xl w-full ">
           {/* Input */}
           <input
             type="text"
             placeholder="Search products..."
-            className="w-full flex-1 rounded-full text-gray-900 text-lg placeholder:text-base placeholder:tracking-wide shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 placeholder:font-normal focus:ring-1 focus:ring-black sm:text-sm px-4 py-2"
+            className=" w-full rounded-full text-gray-900 text-lg placeholder:text-base placeholder:tracking-wide shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 placeholder:font-normal focus:ring-1 focus:ring-black sm:text-sm px-4 py-2"
           />
           {/* Search Icon */}
           <div
@@ -239,7 +240,7 @@ const Header = () => {
         </div>
       </div>
       {/* Categories */}
-      <div className="text-white flex items-center justify-center py-4 ">
+      <div className="text-white flex items-center justify-center py-4 flex-wrap ">
         {categories.map((category, index) => (
           <div key={index}>
             <Menu as="div" className="relative flex-shrink-0">
