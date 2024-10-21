@@ -1,16 +1,12 @@
 "use client";
-import {
-  Fragment,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
-  Transition,
-} from "@headlessui/react";
+import menuCategories from "@/app/api/data/menu_categories";
+import { UserContext } from "@/app/UserContext";
 import Link from "next/link";
-import { useState } from "react";
+import { useContext } from "react";
+import toast from "react-hot-toast";
 import { FiBookmark, FiHeart, FiSearch, FiUser } from "react-icons/fi";
-import { LuArrowLeftRight } from "react-icons/lu";
+import { LuArrowLeftRight, LuLogIn, LuLogOut } from "react-icons/lu";
+import { MdOutlineSpaceDashboard } from "react-icons/md";
 
 function toTitleCase(str) {
   return str
@@ -21,272 +17,139 @@ function toTitleCase(str) {
 }
 
 const Header = () => {
-  const [favoriteProduct, setFavoriteProduct] = useState([]);
-  const [compareProduct, setCompareProduct] = useState([]);
-  const [trackingProduct, setTrackingProduct] = useState([]);
-  const [user, setUser] = useState(null);
-  const categories = [
-    {
-      name: "laptop & tablet",
-      subCategories: [
-        {
-          name: "all laptop",
-        },
-        {
-          name: "laptop accessories",
-        },
-      ],
-    },
-    {
-      name: "components",
-      subCategories: [
-        {
-          name: "computer case",
-        },
-        {
-          name: "ssd",
-        },
-        {
-          name: "motherboard",
-        },
-        {
-          name: "desktop ram",
-        },
-        {
-          name: "cpu cooler",
-        },
-        {
-          name: "casing fan",
-        },
-        {
-          name: "power supply",
-        },
-        {
-          name: "graphics card",
-        },
-      ],
-    },
-    {
-      name: "accessories",
-      subCategories: [
-        {
-          name: "mouse",
-        },
-        {
-          name: "cable & converter",
-        },
-        {
-          name: "power bank",
-        },
-        {
-          name: "headphone & headsets",
-        },
-        {
-          name: "keyboard",
-        },
-        {
-          name: "barcode scanner",
-        },
-        {
-          name: "pen drive",
-        },
-        {
-          name: "webcam",
-        },
-      ],
-    },
-    {
-      name: "office equipment",
-      subCategories: [
-        {
-          name: "photocopier",
-        },
-        {
-          name: "ip phone/pabx",
-        },
-        {
-          name: "scanner",
-        },
-        {
-          name: "pos printer",
-        },
-        {
-          name: "printers",
-        },
-      ],
-    },
-    {
-      name: "gadgets",
-      subCategories: [
-        {
-          name: "smart watch & gadget",
-        },
-      ],
-    },
-    {
-      name: "router & network",
-      subCategories: [
-        {
-          name: "network adapter",
-        },
-        {
-          name: "router",
-        },
-        {
-          name: "access point",
-        },
-      ],
-    },
-    {
-      name: "tv & speaker",
-      subCategories: [
-        {
-          name: "speakers",
-        },
-        {
-          name: "portable speaker",
-        },
-      ],
-    },
-    {
-      name: "cameras",
-      subCategories: [
-        {
-          name: "action camera",
-        },
-      ],
-    },
-    {
-      name: "monitor and displays",
-      subCategories: [
-        {
-          name: "interactive flat panel",
-        },
-        {
-          name: "monitor",
-        },
-      ],
-    },
-    {
-      name: "smartphone & tablet",
-      subCategories: [
-        {
-          name: "adapter & charger",
-        },
-      ],
-    },
-  ];
-
-  const handleLogin = () => {
-    if (user) {
-      setUser(null);
+  const [state, setState] = useContext(UserContext);
+  
+  const redirect = (url) => {
+    if (!state.user) {
+      window.location.href = "/user/login";
     } else {
-      setUser("login");
+      window.location.href = url;
     }
   };
-  return (
-    <div className="w-full bg-white  md:sticky md:top-0 z-50">
-      {/* Header */}
-      <div className="max-w-screen-xl mx-auto py-4 flex flex-col gap-5 md:flex-row items-center justify-between px-4 lg:px-0">
-        {/* Logo */}
-        <Link href={"/"}>
-          {/* <img src={logo} alt="logo" className="w-44" /> */}
-          <h1 className="text-2xl font-bold">SmartPick</h1>
-        </Link>
-        {/* SearchBar */}
-        <div className="flex max-w-3xl w-full ">
-          {/* Input */}
-          <input
-            type="text"
-            placeholder="Search products..."
-            className=" w-full rounded-full text-gray-900 text-lg placeholder:text-base placeholder:tracking-wide shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 placeholder:font-normal focus:ring-1 focus:ring-black sm:text-sm px-4 py-2"
-          />
-          {/* Search Icon */}
-          <div
-            type="submit"
-            className="w-12 h-12 flex items-center justify-center bg-black text-white rounded-full ml-2 hover:bg-red-500 duration-200 cursor-pointer"
-          >
-            <FiSearch />
-          </div>
-        </div>
 
-        {/* Menubar */}
-        <div className="flex items-center gap-x-6 text-2xl">
-          {/* User Icon */}
-          <Link href={"/login"}>
-            <FiUser className="hover:text-red-500 duration-200 cursor-pointer" />
+  const handleLogout = async () => {
+    toast.success("Logout successful");
+    window.localStorage.removeItem("auth");
+    setState({ user: null, token: "" });
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 2000);
+  };
+
+  return (
+    <div>
+      <div className="z-50 w-full bg-[#f7f7f7] pb-2 md:sticky md:top-0">
+        {/* Header */}
+        <div className="mx-auto flex max-w-screen-xl flex-col items-center justify-between gap-5 px-4 py-4 md:flex-row lg:px-0">
+          {/* Logo */}
+          <Link href={"/"}>
+            <h1 className="text-2xl font-bold">SmartPick</h1>
           </Link>
-          {/* Favorite Icon */}
-          <Link href={"/favorite"} className="relative block">
-            <FiHeart className="hover:text-red-500 duration-200 cursor-pointer" />
-            <span className="inline-flex items-center justify-center bg-red-500 text-white absolute -top-1 -right-2 text-[9px] rounded-full w-4 h-4">
-              {favoriteProduct?.length > 0 ? favoriteProduct?.length : "0"}
-            </span>
-          </Link>
-          {/* Tracking Icon */}
-          <Link href={"/tracking"} className="relative block">
-            <FiBookmark className="hover:text-red-500 duration-200 cursor-pointer" />
-            <span className="inline-flex items-center justify-center bg-red-500 text-white absolute -top-1 -right-2 text-[9px] rounded-full w-4 h-4">
-              {trackingProduct?.length > 0 ? trackingProduct?.length : "0"}
-            </span>
-          </Link>
-          {/* Compare Icon */}
-          <Link href={"/compare"} className="relative block">
-            <LuArrowLeftRight className="hover:text-red-500 duration-200 cursor-pointer" />
-            <span className="inline-flex items-center justify-center bg-red-500 text-white absolute -top-1 -right-2 text-[9px] rounded-full w-4 h-4">
-              {compareProduct?.length > 0 ? compareProduct?.length : "0"}
-            </span>
-          </Link>
-        </div>
-      </div>
-      {/* Categories */}
-      <div className="text-white max-w-screen-xl mx-auto flex items-center justify-center py10 flex-wrap  ">
-        {categories.map((category, index) => (
-          <div key={index}>
-            <Menu as="div" className="relative flex-shrink-0">
-              <div>
-                <MenuButton className="inline-flex items-center gap-2 rounded-md  py-1.5 px-1 font-semibold text-gray-900">
-                  <span className="px-1">{toTitleCase(category?.name)}</span>
-                </MenuButton>
-              </div>
-              <Transition
-                as={Fragment}
-                enter="transition ease-out duration-100"
-                enterFrom="transform opacity-0 scale-95"
-                enterTo="transform opacity-100 scale-100"
-                leave="transition ease-in duration-75"
-                leaveFrom="transform opacity-100 scale-100"
-                leaveTo="transform opacity-0 scale-95"
-              >
-                <MenuItems
-                  className={`absolute left-0 mt-2 ${
-                    category?.subCategories.length > 8
-                      ? "grid w-96 grid-cols-2 "
-                      : "w-48"
-                  } absolute z-20 origin-top-left rounded-xl p-2 text-sm bg-slate-100 text-black`}
-                >
-                  <MenuItem className="flex items-center gap-2 rounded-lg py-1 px-3 hover:bg-red-300">
-                    <Link href={`/product?category=${category?.name}`}>
-                      All {toTitleCase(category?.name)}
-                    </Link>
-                  </MenuItem>
-                  {category?.subCategories.map((subcategory) => (
-                    <MenuItem
-                      className="flex items-center gap-2 rounded-lg py-1 px-3 hover:bg-red-300"
-                      key={category?.name}
-                    >
-                      <Link
-                        href={`/product?category=${category?.name}&subcategory=${subcategory?.name}`}
-                      >
-                        {toTitleCase(subcategory?.name)}
-                      </Link>
-                    </MenuItem>
-                  ))}
-                </MenuItems>
-              </Transition>
-            </Menu>
+          {/* SearchBar */}
+          <div className="flex w-full max-w-3xl">
+            {/* Input */}
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="w-11/12 rounded-full px-4 py-2 text-lg text-gray-900  ring-1 ring-inset ring-gray-300 placeholder:text-base placeholder:font-normal placeholder:tracking-wide placeholder:text-gray-400 focus:ring-1 focus:ring-black sm:text-sm"
+            />
+            {/* Search Icon */}
+            <div className="ml-2 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-black text-white duration-200 hover:bg-red-500">
+              <FiSearch />
+            </div>
           </div>
-        ))}
+          {/* Menubar */}
+          <div className="flex items-center gap-x-6 text-2xl">
+            {/* User Icon */}
+            <div
+              onClick={() => redirect("/user/profile")}
+              className="relative block"
+            >
+              <FiUser className="cursor-pointer duration-200 hover:text-red-500" />
+            </div>
+            {/* Dashboard Icon */}
+            <div
+              onClick={() => redirect("/user/dashboard")}
+              className="relative block"
+            >
+              <MdOutlineSpaceDashboard className="cursor-pointer duration-200 hover:text-red-500" />
+            </div>
+            {/* Favorite Icon */}
+            <div
+              onClick={() => redirect("/user/favorite")}
+              className="relative block"
+            >
+              <FiHeart className="cursor-pointer duration-200 hover:text-red-500" />
+              <span className="absolute -right-2 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] text-white">
+                {state.user?.favorites?.length > 0
+                  ? state.user?.favorites?.length
+                  : "0"}
+              </span>
+            </div>
+            {/* Tracking Icon */}
+            <div
+              onClick={() => redirect("/user/tracking")}
+              className="relative block"
+            >
+              <FiBookmark className="cursor-pointer duration-200 hover:text-red-500" />
+              <span className="absolute -right-2 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] text-white">
+                {state.user?.trackings?.length > 0
+                  ? state.user?.trackings?.length
+                  : "0"}
+              </span>
+            </div>
+            {/* Compare Icon */}
+            <div
+              onClick={() => redirect("/user/compare")}
+              className="relative block"
+            >
+              <LuArrowLeftRight className="cursor-pointer duration-200 hover:text-red-500" />
+              <span className="absolute -right-2 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] text-white">
+                {state.user?.compares?.length > 0
+                  ? state.user?.compares?.length
+                  : "0"}
+              </span>
+            </div>
+            {/* Logout Icon */}
+            {state.user ? (
+              <div onClick={handleLogout} className="relative block">
+                <LuLogOut className="cursor-pointer duration-200 hover:text-red-500" />
+              </div>
+            ) : (
+              <Link href="/user/login" className="relative block">
+                <LuLogIn className="cursor-pointer duration-200 hover:text-red-500" />
+              </Link>
+            )}
+          </div>
+        </div>
+        {/* Categories */}
+        <div className="mx-auto flex max-w-screen-xl flex-wrap items-center justify-center text-gray-950">
+          {menuCategories.map((category, index) => (
+            <div key={index} class="group relative cursor-pointer py-1">
+              <div class="flex items-center justify-between px-1">
+                <Link
+                  href={`/product?category=${category?.name}`}
+                  class="menu-hover py-1 text-base font-medium text-black lg:mx-4"
+                >
+                  {toTitleCase(category?.name)}
+                </Link>
+              </div>
+              <div
+                class={`${category?.subCategories.length > 8 ? "grid grid-cols-2" : "w-48"} invisible absolute z-50 flex flex-col px-4 py-1 bg-slate-100 text-gray-800 group-hover:visible`}
+              >
+                {category?.subCategories.map((subcategory) => (
+                  <Link
+                    href={`/product?category=${category?.name}&subcategory=${subcategory?.name}`}
+                    key={subcategory?.name}
+                    class=" w-full block py-1 text-gray-500 hover:text-black md:mx-2"
+                  >
+                    {toTitleCase(subcategory?.name)}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
