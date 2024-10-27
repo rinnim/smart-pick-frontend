@@ -3,24 +3,24 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'placehold.co',
+        protocol: "https",
+        hostname: "placehold.co",
       },
       {
-        protocol: 'http',
-        hostname: 'localhost',
+        protocol: "http",
+        hostname: "localhost",
       },
       {
-        protocol: 'https',
-        hostname: 'www.techlandbd.com',
+        protocol: "https",
+        hostname: "www.techlandbd.com",
       },
       {
-        protocol: 'https',
-        hostname: 'i.ibb.co',
+        protocol: "https",
+        hostname: "i.ibb.co",
       },
       {
-        protocol: 'https',
-        hostname: 'www.startech.com.bd',
+        protocol: "https",
+        hostname: "www.startech.com.bd",
       },
     ],
   },
