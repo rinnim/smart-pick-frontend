@@ -1,7 +1,28 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["placehold.co", "localhost", "www.techlandbd.com"],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.techlandbd.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ibb.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.startech.com.bd',
+      },
+    ],
   },
 };
 

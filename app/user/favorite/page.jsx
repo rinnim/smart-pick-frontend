@@ -1,7 +1,7 @@
 "use client";
 import HorizontalBar from "@/app/ui/components/HorizontalBar";
-import Loading from "@/app/ui/components/Loading";
 import ProductCardWide from "@/app/ui/components/ProductCardWide";
+import ProductCardWideSkeleton from "@/app/ui/components/ProductCardWideSkeleton";
 import ProductNotFound from "@/app/ui/components/ProductNotFound";
 import Title from "@/app/ui/components/Title";
 import axios from "axios";
@@ -9,62 +9,85 @@ import Link from "next/link";
 import { useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { UserContext } from "../../UserContext";
+
 const Favorite = () => {
   const [state, setState] = useContext(UserContext);
   const [favoriteProduct, setFavoriteProduct] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const getFavoriteProducts = async () => {
-      const response = await axios.get(
-        "https://smart-pick-backend.onrender.com/api/user-actions/data",
-        {
-          headers: { Authorization: `Bearer ${state.token}` },
-        },
-      );
-      setFavoriteProduct(response.data.favorites);
-      setLoading(false);
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/user-actions/data",
+          {
+            headers: { Authorization: `Bearer ${state.token}` },
+          },
+        );
+        setFavoriteProduct(response.data.favorites);
+        setLoading(false);
+      } catch (error) {
+        console.error(error);
+        toast.error(error.message);
+        setError(error.message);
+        setLoading(false);
+      }
     };
     if (state.user) {
       getFavoriteProducts();
     }
-  }, [state.user]);
+  }, [state.token, state.user]);
 
   const handleFavorite = async (product) => {
     try {
-      const response = await axios.post(
-        "https://smart-pick-backend.onrender.com/api/user-actions/favorites",
+      await toast.promise(
+        axios.post(
+          "http://localhost:5000/api/user-actions/favorites",
+          {
+            productId: product._id,
+          },
+          {
+            headers: { Authorization: `Bearer ${state.token}` },
+          },
+        ),
         {
-          productId: product._id,
-        },
-        {
-          headers: { Authorization: `Bearer ${state.token}` },
-        },
+          loading: "Updating favorites",
+          success: (response) => {
+            setState((prev) => ({
+              ...prev,
+              user: {
+                ...prev.user,
+                favorites: response.data.favorites,
+              },
+            }));
+
+            setFavoriteProduct((prevProducts) =>
+              prevProducts.filter((p) => p._id !== product._id)
+            );
+
+            // Update the entire auth object in local storage with updated favorites
+            const updatedAuth = {
+              ...JSON.parse(window.localStorage.getItem("auth")),
+              user: {
+                ...state.user,
+                favorites: response.data.favorites,
+              },
+            };
+
+            window.localStorage.setItem("auth", JSON.stringify(updatedAuth));
+
+            // return product.name + " removed from favorites";
+            return "Product removed from favorites";
+          },
+          error: (error) => {
+            console.error(error);
+            return error.response?.data?.message || error.message;
+          },
+        }
       );
-
-      setState((prev) => ({
-        ...prev,
-        user: {
-          ...prev.user,
-          favorites: response.data.favorites,
-        },
-      }));
-      // Also update the entire auth object in local storage with updated favorites
-      const updatedAuth = {
-        ...JSON.parse(window.localStorage.getItem("auth")),
-        user: {
-          ...state.user,
-          favorites: response.data.favorites,
-        },
-      };
-
-      window.localStorage.setItem("auth", JSON.stringify(updatedAuth));
-
-      toast.success(product.name + " removed from favorites");
-      console.log(response);
     } catch (error) {
       console.error(error);
-      toast.error(error.message);
     }
   };
 
@@ -72,7 +95,7 @@ const Favorite = () => {
     <div className="mx-auto max-w-screen-xl px-4 py-10 lg:px-0">
       <div>
         <Title text="Favorite Products" />
-        <p className="mt-2 max-w-[500px] text-sm tracking-wide text-gray-500">
+        <p className="mt-2 text-xs tracking-wide text-gray-500 md:text-base">
           These are the products you have added to your favorite list
         </p>
         <HorizontalBar />
@@ -80,26 +103,30 @@ const Favorite = () => {
 
       {/* favorite products */}
       {loading ? (
-        <div className="flex h-[500px] items-center justify-center">
-          <Loading />
+        <div className="">
+          {[...Array(4)].map((_, index) => (
+            <ProductCardWideSkeleton key={index} />
+          ))}
         </div>
       ) : favoriteProduct?.length > 0 ? (
-        <div className="px-4 sm:px-0">
-          <div className="">
-            {favoriteProduct?.map((product) => (
-              <ProductCardWide
-                key={product?._id}
-                product={product}
-                handleClose={handleFavorite}
-              />
-            ))}
-          </div>
+        <div className="">
+          {favoriteProduct?.map((product) => (
+            <ProductCardWide 
+              key={product?._id} 
+              product={product} 
+              handleClose={handleFavorite} 
+            />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 py-10 text-center">
+          <ProductNotFound title={error} />
+          <p className="text-lg leading-6 tracking-wide text-gray-500">
+            Try refreshing the page or contact support.
+          </p>
         </div>
       ) : (
-        <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
-          {/* <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-            Nothing added to Favorite
-          </h2> */}
+        <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 py-5 text-center">
           <ProductNotFound title="Nothing added to Favorite" />
           <p className="text-lg leading-6 tracking-wide text-gray-500">
             Add products to your favorite list for them to appear here

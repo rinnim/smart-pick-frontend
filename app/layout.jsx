@@ -17,7 +17,6 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-
 export default function RootLayout({ children }) {
   return (
     <UserProvider>
@@ -32,14 +31,16 @@ export default function RootLayout({ children }) {
           {children}
           <Footer />
           <Toaster
-            position="bottom-center"
+            position="top-center"
             reverseOrder={false}
             gutter={8}
             toastOptions={{
               style: {
-                backgroundColor: "black",
-                color: "white",
-                padding: "15px",
+                backgroundColor: "white",
+                color: "black",
+                padding: "20px",
+                borderRadius: "15px",
+                fontSize: "16px",
               },
             }}
           />

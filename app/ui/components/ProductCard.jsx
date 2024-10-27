@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import ProductCardNav from "../components/ProductCardNav";
+import Button from "./Button";
 
-const ProductCard = ({ item }) => {
-  const showDiscountPercentage = (item) => {
-    if (item?.regularPrice && item?.price) {
+const ProductCard = ({ product }) => {
+  const showDiscountPercentage = (product) => {
+    if (product?.regularPrice && product?.price) {
       return (
-        ((item?.regularPrice - item?.price) / item?.regularPrice) *
+        ((product?.regularPrice - product?.price) / product?.regularPrice) *
         100
       ).toFixed(0);
     } else {
@@ -15,40 +16,41 @@ const ProductCard = ({ item }) => {
   };
 
   return (
-    <div className="border group border-gray-200 rounded-lg p-2 overflow-hidden flex flex-col justify-between hover:border-black duration-200 cursor-pointer">
-      <Link href={`/product/${item?._id}`}>
-        <div className="w-full h-60 relative p-2">
-          {showDiscountPercentage(item) > 0 && (
-            <span className="absolute right-0 top-0 m-1 z-10 w-16 text-xs text-center py-1 rounded-md font-semibold border">
-              {showDiscountPercentage(item)}% OFF
+    <div className="group flex cursor-pointer flex-col justify-between overflow-hidden rounded-lg border border-gray-200 p-2 duration-200 hover:border-black">
+      <Link href={`/product/${product?._id}`}>
+        <div className="relative h-60 w-full p-2">
+          <span className="absolute left-0 top-0 z-10 m-1 rounded-md border px-1 py-1 text-center text-xs font-semibold uppercase">
+            {product?.shop}
+          </span>
+          {showDiscountPercentage(product) > 0 && (
+            <span className="absolute right-0 top-0 z-10 m-1 w-16 rounded-md border py-1 text-center text-xs font-semibold">
+              {showDiscountPercentage(product)}% OFF
             </span>
           )}
           <Image
             height={1000}
             width={1000}
-            src={item?.images[0]}
+            src={product?.images[0]}
             alt="productImage"
-            className="w-full h-full rounded-md object-cover group-hover:scale-110 duration-300"
+            className="h-full w-full rounded-md object-cover duration-300 group-hover:scale-110"
           />
         </div>
-        <div className="px-2 flex flex-col gap-2 pb-2">
-          <h3 className="text-xs uppercase font-semibold text-lightText">
-            {item?.category}
+        <div className="flex flex-col gap-2 px-2 pb-2">
+          <h3 className="text-lightText text-xs font-semibold uppercase">
+            {product?.category}
           </h3>
-          <h2 className="text-lg font-bold line-clamp-2">{item?.name}</h2>
+          <h2 className="line-clamp-2 text-lg font-bold">{product?.name}</h2>
         </div>
       </Link>
       <div className="flex flex-col gap-2 px-2 pb-2">
-        <div className="flex items-center gap-2">
-          <p className="font-bold text-skyText">{item?.price}</p>
-          <p className="line-through text-gray-500 font-medium">
-            {item?.regularPrice}
+        <div className="flex gap-2 text-sm md:text-lg">
+          <p className="font-medium text-gray-500 line-through">
+            {product?.regularPrice}
           </p>
+          <p className="font-bold">{product?.price}</p>
         </div>
-        <ProductCardNav product={item} />
-        <div className="bg-[#f7f7f7] uppercase text-xs py-3 text-center rounded-full font-semibold hover:bg-black hover:text-white duration-200 cursor-pointer">
-          <Link href={item?.url}>buy now</Link>
-        </div>
+        <ProductCardNav product={product} />
+        <Button text="buy now" href={product?.url} />
       </div>
     </div>
   );

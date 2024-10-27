@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { FaBookmark, FaHeart, FaRegBookmark, FaRegHeart } from "react-icons/fa";
 import { LuArrowLeftRight } from "react-icons/lu";
 import "react-toastify/dist/ReactToastify.css";
+
 const ProductCardNav = ({ product }) => {
   const [favoriteProduct, setFavoriteProduct] = useState(false);
   const [compareProduct, setCompareProduct] = useState(false);
@@ -16,47 +17,51 @@ const ProductCardNav = ({ product }) => {
     if (!state.user) {
       window.location.href = "/user/login";
       return;
-    } else {
-      try {
-        const response = await axios.post(
-          "https://smart-pick-backend.onrender.com/api/user-actions/favorites",
+    }
+    
+    try {
+      await toast.promise(
+        axios.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/user-actions/favorites`,
           {
             productId: product._id,
           },
           {
             headers: { Authorization: `Bearer ${state.token}` },
           },
-        );
+        ),
+        {
+          loading: "Updating favorites",
+          success: (response) => {
+            setState((prev) => ({
+              ...prev,
+              user: {
+                ...prev.user,
+                favorites: response.data.favorites,
+              },
+            }));
 
-        setState((prev) => ({
-          ...prev,
-          user: {
-            ...prev.user,
-            favorites: response.data.favorites,
+            const updatedAuth = {
+              ...JSON.parse(window.localStorage.getItem("auth")),
+              user: {
+                ...state.user,
+                favorites: response.data.favorites,
+              },
+            };
+
+            window.localStorage.setItem("auth", JSON.stringify(updatedAuth));
+
+            return favoriteProduct
+              ? "Product removed from favorites"
+              : "Product added to favorites";
           },
-        }));
-
-        toast.success(
-          favoriteProduct
-            ? product.name + " removed from favorites"
-            : product.name + " added to favorites",
-        );
-
-        const updatedAuth = {
-          ...JSON.parse(window.localStorage.getItem("auth")),
-          user: {
-            ...state.user,
-            favorites: response.data.favorites,
+          error: (error) => {
+            return error.response?.data?.message || error.message;
           },
-        };
-
-        window.localStorage.setItem("auth", JSON.stringify(updatedAuth));
-
-        console.log(response);
-      } catch (error) {
-        console.error(error);
-        toast.error(error.message);
-      }
+        },
+      );
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -64,45 +69,51 @@ const ProductCardNav = ({ product }) => {
     if (!state.user) {
       window.location.href = "/user/login";
       return;
-    } else {
-      try {
-        const response = await axios.post(
-          "https://smart-pick-backend.onrender.com/api/user-actions/trackings",
+    }
+    
+    try {
+      await toast.promise(
+        axios.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/user-actions/trackings`,
           {
             productId: product._id,
           },
           {
             headers: { Authorization: `Bearer ${state.token}` },
           },
-        );
+        ),
+        {
+          loading: "Updating tracking list",
+          success: (response) => {
+            setState((prev) => ({
+              ...prev,
+              user: {
+                ...prev.user,
+                trackings: response.data.trackings,
+              },
+            }));
 
-        setState((prev) => ({
-          ...prev,
-          user: {
-            ...prev.user,
-            trackings: response.data.trackings,
+            const updatedAuth = {
+              ...JSON.parse(window.localStorage.getItem("auth")),
+              user: {
+                ...state.user,
+                trackings: response.data.trackings,
+              },
+            };
+
+            window.localStorage.setItem("auth", JSON.stringify(updatedAuth));
+
+            return trackingProduct
+              ? "Product removed from tracking"
+              : "Product added to tracking";
           },
-        }));
-
-        toast.success(
-          trackingProduct
-            ? product.name + " removed from tracking"
-            : product.name + " added to tracking",
-        );
-        const updatedAuth = {
-          ...JSON.parse(window.localStorage.getItem("auth")),
-          user: {
-            ...state.user,
-            trackings: response.data.trackings,
+          error: (error) => {
+            return error.response?.data?.message || error.message;
           },
-        };
-
-        window.localStorage.setItem("auth", JSON.stringify(updatedAuth));
-        console.log(response);
-      } catch (error) {
-        console.error(error);
-        toast.error(error.message);
-      }
+        },
+      );
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -110,55 +121,60 @@ const ProductCardNav = ({ product }) => {
     if (!state.user) {
       window.location.href = "/user/login";
       return;
-    } else {
-      try {
-        const response = await axios.post(
-          "https://smart-pick-backend.onrender.com/api/user-actions/compares",
+    }
+    
+    try {
+      await toast.promise(
+        axios.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/user-actions/compares`,
           {
             productId: product._id,
           },
           {
             headers: { Authorization: `Bearer ${state.token}` },
           },
-        );
-        if (response.status === 200) {
-          setState((prev) => ({
-            ...prev,
-            user: {
-              ...prev.user,
-              compares: response.data.compares,
-            },
-          }));
+        ),
+        {
+          loading: "Updating comparison list",
+          success: (response) => {
+            console.log(response.data);
+            setState((prev) => ({
+              ...prev,
+              user: {
+                ...prev.user,
+                compares: response.data.compares,
+              },
+            }));
 
-          toast.success(
-            compareProduct
-              ? product.name + " removed from compares"
-              : product.name + " added to compares",
-          );
-          const updatedAuth = {
-            ...JSON.parse(window.localStorage.getItem("auth")),
-            user: {
-              ...state.user,
-              compares: response.data.compares,
-            },
-          };
+            const updatedAuth = {
+              ...JSON.parse(window.localStorage.getItem("auth")),
+              user: {
+                ...state.user,
+                compares: response.data.compares,
+              },
+            };
 
-          window.localStorage.setItem("auth", JSON.stringify(updatedAuth));
-        } else {
-          toast.error(response.data.message);
-        }
-      } catch (error) {
-        console.error(error);
-        toast.error(error.message);
-      }
+            window.localStorage.setItem("auth", JSON.stringify(updatedAuth));
+
+            return compareProduct
+              ? "Product removed from compares"
+              : "Product added to compares";
+          },
+          error: (error) => {
+            return error.response?.data?.message || error.message;
+          },
+        },
+      );
+    } catch (error) {
+      console.error(error);
     }
   };
 
   useEffect(() => {
     if (state.user) {
-      setFavoriteProduct(state.user?.favorites?.includes(product._id));
-      setTrackingProduct(state.user?.trackings?.includes(product._id));
-      setCompareProduct(state.user?.compares?.includes(product._id));
+      setFavoriteProduct(state.user?.favorites?.includes(product?._id));
+      setTrackingProduct(state.user?.trackings?.includes(product?._id));
+      setCompareProduct(state.user?.compares?.includes(product?._id));
     }
   }, [state.user, product]);
   return (

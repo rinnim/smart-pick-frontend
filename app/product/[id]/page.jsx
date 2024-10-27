@@ -2,6 +2,7 @@
 import Loading from "@/app/ui/components/Loading";
 import PriceTimelineChart from "@/app/ui/components/PriceTimelineChart";
 import ProductCardNav from "@/app/ui/components/ProductCardNav";
+import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -22,16 +23,12 @@ const ProductDetailsPage = ({ params }) => {
     if (id) {
       const fetchProduct = async () => {
         try {
-          const response = await fetch(
-            `https://smart-pick-backend.onrender.com/api/product/find/${id}`,
+          const { data } = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/product/find/${id}`
           );
-          if (!response.ok) {
-            throw new Error("Failed to fetch product");
-          }
-          const data = await response.json();
           setProduct(data);
         } catch (err) {
-          setError(err.message);
+          setError(err.response?.data?.message || "Failed to fetch product");
         } finally {
           setLoading(false);
         }
@@ -215,11 +212,11 @@ const ProductDetailsPage = ({ params }) => {
                     {Object.entries(product.features).map(([key, value]) => (
                       <tr
                         key={key}
-                        className={`border-b border-gray-200 duration-200 hover:bg-[#f7f7f7]`}
+                        className={`flex flex-col border-b border-gray-200 duration-200 hover:bg-[#f7f7f7] md:flex-row`}
                       >
-                        <td className="p-4 font-bold">{key}</td>
+                        <td className="flex-1 px-2 pt-2 font-bold md:p-4">{key}</td>
                         <td
-                          className="p-4"
+                          className="flex-1 px-2 pb-2 md:p-4"
                           dangerouslySetInnerHTML={{ __html: value }}
                         />
                       </tr>

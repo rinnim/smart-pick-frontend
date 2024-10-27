@@ -12,17 +12,17 @@ const PopularSearch = () => {
     { title: "Headphone", link: "#" },
   ];
   return (
-    <div className="max-w-screen-xl mx-auto py-10 px-4 lg:px-0">
+    <div className="mx-auto max-w-screen-xl px-4 py-10 lg:px-0">
       <div>
         <Title text="Popular Search" />
         <HorizontalBar />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 mt-7 gap-2">
+      <div className="mt-7 grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6">
         {popularSearchItems?.map(({ title, link }, index) => (
           <Link
             key={index}
             href={`/${link}`}
-            className={`border rounded-full hover:text-white border-gray-300  hover:border-black hover:bg-black duration-200 flex items-center justify-center px-6 py-4 cursor-pointer group`}
+            className={`group flex cursor-pointer items-center justify-center rounded-full border border-gray-300 px-6 py-4 duration-200 hover:border-black hover:bg-black hover:text-white`}
           >
             <span className="text-center font-medium capitalize">{title}</span>
           </Link>

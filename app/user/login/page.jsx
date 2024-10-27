@@ -1,6 +1,5 @@
 "use client";
 import axios from "axios";
-import Cookies from "js-cookie";
 import Link from "next/link";
 import { useContext, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -33,31 +32,36 @@ const LoginPage = () => {
     };
 
     try {
-      const response = await axios.post(
-        "https://smart-pick-backend.onrender.com/auth/user/login",
-        requestBody,
+      await toast.promise(
+        axios.post("http://localhost:5000/auth/user/login", requestBody),
+        {
+          loading: "Logging in",
+          success: (response) => {
+            // set the user in the context
+            setState({
+              user: response.data.user,
+              token: response.data.token,
+            });
+            // also save the user to local storage
+            window.localStorage.setItem("auth", JSON.stringify(response.data));
+
+            setTimeout(() => {
+              window.location.href = "/user/profile";
+            }, 1000);
+
+            return "Login successful";
+          },
+          error: (error) => {
+            console.log("login error", error);
+            return (
+              error.response?.data?.message ||
+              "Login failed. Please check your credentials."
+            );
+          },
+        },
       );
-
-      if (response.status === 200) {
-        const token = response.data.token;
-
-        // Save the JWT token in a cookie
-        Cookies.set("token", token, { expires: 7 }); // Cookie expires in 7 days
-        // also save the user to local storage
-        window.localStorage.setItem("auth", JSON.stringify(response.data));
-        // set the user in the context
-        setState({
-          user: response.data.user,
-          token: response.data.token,
-        });
-        toast.success("Login successful");
-
-        setTimeout(() => {
-          window.location.href = "/user/profile";
-        }, 1000);
-      }
     } catch (error) {
-      toast.error("Login failed. Please check your credentials.");
+      console.error("Login error:", error);
     } finally {
       setLoading(false);
     }
@@ -88,7 +92,7 @@ const LoginPage = () => {
                   name="usernameOrEmail"
                   value={usernameOrEmail}
                   onChange={(e) => setUsernameOrEmail(e.target.value)}
-                  className="focus:ring-skyText mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 sm:text-sm sm:leading-6"
+                  className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
                 />
               </div>
               <div className="relative sm:col-span-3">
@@ -99,7 +103,7 @@ const LoginPage = () => {
                   name="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="focus:ring-skyText mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 sm:text-sm sm:leading-6"
+                  className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
                 />
                 <button
                   type="button"
@@ -121,15 +125,26 @@ const LoginPage = () => {
             {loading ? <FaSpinner className="my-1 animate-spin" /> : "login"}
           </button>
         </form>
-        <p className="-mt-2 py-10 text-center text-sm leading-6 text-gray-400">
-          Don{"'"}t have an account?{" "}
-          <Link
-            href="/user/signup"
-            className="font-semibold text-gray-200 underline decoration-[1px] underline-offset-2 duration-200 hover:text-white"
-          >
-            SignUp
-          </Link>
-        </p>
+        <div className="flex flex-col justify-center gap-2 py-10 sm:flex-row">
+          <p className="text-center text-sm leading-6 text-gray-400">
+            Forgot your password?{" "}
+            <Link
+              href="/user/forgot-password"
+              className="font-semibold text-gray-200 underline decoration-[1px] underline-offset-2 duration-200 hover:text-white"
+            >
+              Reset Password
+            </Link>
+          </p>
+          <p className="text-center text-sm leading-6 text-gray-400">
+            Don{"'"}t have an account?{" "}
+            <Link
+              href="/user/signup"
+              className="font-semibold text-gray-200 underline decoration-[1px] underline-offset-2 duration-200 hover:text-white"
+            >
+              SignUp
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

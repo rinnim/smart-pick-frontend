@@ -1,11 +1,11 @@
-const ProductNotFound = () => {
+const ProductNotFound = ({ title }) => {
   return (
     <div className="">
-      <div className="flex flex-col justify-center px-5 mx-auto mt-32 gap-2 text-center items-center sm:p-16">
+      <div className="mx-auto my-10 flex flex-col items-center justify-center gap-2 px-5 text-center sm:p-16">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 512 512"
-          className="w-16 h-16 dark:text-gray-400"
+          className="h-16 w-16 dark:text-gray-400"
         >
           <path
             fill="currentColor"
@@ -28,7 +28,7 @@ const ProductNotFound = () => {
           ></polygon>
         </svg>
         <p className="text-4xl font-semibold">Sorry!</p>
-        <p className="text-2xl">No Products Found</p>
+        <p className="text-2xl">{title}</p>
       </div>
     </div>
   );

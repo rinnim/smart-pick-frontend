@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import { RxCross2 } from "react-icons/rx";
@@ -23,13 +23,12 @@ function toTitleCase(str) {
 
 const ProductsPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [products, setProducts] = useState([]);
-  // const [categories, setCategories] = useState([]);
-  // const [brands, setBrands] = useState([]);
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-  const [selectedBrand, setSelectedBrand] = useState(null);
   const [minPrice, setMinPrice] = useState(null);
   const [maxPrice, setMaxPrice] = useState(null);
   const [sortOrder, setSortOrder] = useState(null);
@@ -39,6 +38,71 @@ const ProductsPage = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState(null);
+
+  useEffect(() => {
+    // Read query parameters from URL
+    const category = searchParams.get("category");
+    const brands = searchParams.get("brands");
+    const minPriceParam = searchParams.get("minPrice");
+    const maxPriceParam = searchParams.get("maxPrice");
+    const subcategory = searchParams.get("subcategory");
+    const sortByParam = searchParams.get("sortBy");
+    const sortOrderParam = searchParams.get("sortOrder");
+    const productsPerPageParam = searchParams.get("productsPerPage");
+    const currentPageParam = searchParams.get("currentPage");
+    const search = searchParams.get("search");
+
+    // Set state based on URL parameters
+    setSelectedCategory(category || null);
+    setSelectedBrands(brands ? brands.split(",") : []);
+    setMinPrice(minPriceParam ? Number(minPriceParam) : null);
+    setMaxPrice(maxPriceParam ? Number(maxPriceParam) : null);
+    setSelectedSubcategory(subcategory || null);
+    setSortBy(sortByParam || null);
+    setSortOrder(sortOrderParam || null);
+    setProductsPerPage(
+      productsPerPageParam ? Number(productsPerPageParam) : 12,
+    );
+    setCurrentPage(currentPageParam ? Number(currentPageParam) : 1);
+    setSearch(search || "");
+
+    // Fetch products using the URL parameters
+    const fetchProducts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const filterParams = {
+          category: category || undefined,
+          minPrice: minPriceParam || undefined,
+          maxPrice: maxPriceParam || undefined,
+          subcategory: subcategory || undefined,
+          sortBy: sortByParam || undefined,
+          sortOrder: sortOrderParam || undefined,
+          limit: productsPerPageParam || 12,
+          page: currentPageParam || 1,
+          brands: brands || undefined,
+          search: search || undefined,
+        };
+
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/product/find`,
+          {
+            params: filterParams,
+          },
+        );
+        setProducts(response.data.products);
+        setTotalPages(response.data.totalPages);
+        setLoading(false);
+      } catch (err) {
+        setError("Error fetching products");
+        console.error(err);
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [searchParams]);
 
   const updateQueryParams = () => {
     const query = {
@@ -50,16 +114,16 @@ const ProductsPage = () => {
       sortOrder,
       productsPerPage,
       currentPage,
+      search,
     };
 
-    // Join selected brands into a comma-separated string
     if (selectedBrands.length > 0) {
       query.brands = selectedBrands.join(",");
     }
 
     const searchParams = new URLSearchParams();
     Object.entries(query).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
+      if (value !== undefined && value !== null && value !== "") {
         searchParams.append(key, value);
       }
     });
@@ -67,41 +131,7 @@ const ProductsPage = () => {
     router.push(`/product?${searchParams}`);
   };
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const filterParams = {
-        category: selectedCategory || undefined,
-        minPrice: minPrice || undefined,
-        maxPrice: maxPrice || undefined,
-        subcategory: selectedSubcategory || undefined,
-        sortBy: sortBy || undefined,
-        sortOrder: sortOrder || undefined,
-        limit: productsPerPage,
-        page: currentPage,
-        brands:
-          selectedBrands.length > 0 ? selectedBrands.join(",") : undefined,
-      };
-
-      const response = await axios.get(
-        "https://smart-pick-backend.onrender.com/api/product/find",
-        {
-          params: filterParams,
-        }
-      );
-      setProducts(response.data.products);
-      setTotalPages(response.data.totalPages);
-    } catch (err) {
-      setError("Error fetching products");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchProducts();
     updateQueryParams();
   }, [
     selectedCategory,
@@ -113,6 +143,7 @@ const ProductsPage = () => {
     sortOrder,
     productsPerPage,
     currentPage,
+    search,
   ]);
 
   const handleProductsPerPageChange = (number) => {
@@ -137,28 +168,32 @@ const ProductsPage = () => {
     setSelectedBrands((prev) => prev.filter((b) => b !== brand));
   };
   return (
-    <div className="max-w-screen-xl mx-auto py-10 px-4 lg:px-0">
-      <h2 className="text-4xl text-center font-semibold">
-        {selectedCategory ? toTitleCase(selectedCategory) : "All Products"}
+    <div className="mx-auto max-w-screen-xl px-4 py-10 lg:px-0">
+      <h2 className="text-center text-4xl font-semibold">
+        {search
+          ? `Search results for "${search}"`
+          : selectedCategory
+            ? toTitleCase(selectedCategory)
+            : "All Products"}
       </h2>
       <HorizontalBar className={"mb-10"} />
 
       <div className="flex gap-10">
         {/* Left Filters Section */}
-        <div className="md:inline-flex flex flex-col gap-6 w-1/4">
+        <div className="flex w-1/4 flex-col gap-6 md:inline-flex">
           <h2 className="text-3xl font-bold">Filters</h2>
 
           {/* Products Per Page */}
           <div>
-            <p className="text-sm uppercase font-semibold underline mb-2">
+            <p className="mb-2 text-sm font-semibold uppercase underline">
               Products Per Page
             </p>
-            <div className="flex gap-2 w-full justify-between">
+            <div className="flex w-full justify-between gap-2">
               {[12, 20, 40].map((number) => (
                 <button
                   key={number}
                   onClick={() => handleProductsPerPageChange(number)}
-                  className={`border text-gray-400 border-gray-300 w-full py-1 rounded-lg font-medium hover:bg-black hover:text-white duration-200 ${
+                  className={`w-full rounded-lg border border-gray-300 py-1 font-medium text-gray-400 duration-200 hover:bg-black hover:text-white ${
                     productsPerPage === number ? "bg-black text-white" : ""
                   }`}
                 >
@@ -170,15 +205,15 @@ const ProductsPage = () => {
 
           {/* Sort By */}
           <div>
-            <p className="text-sm uppercase font-semibold underline mb-2">
+            <p className="mb-2 text-sm font-semibold uppercase underline">
               Sort By
             </p>
-            <div className="flex gap-2 w-full justify-between">
+            <div className="flex w-full justify-between gap-2">
               {["default", "price"].map((option) => (
                 <button
                   key={option}
                   onClick={() => setSortBy(option === "default" ? "" : option)}
-                  className={`border text-gray-400 border-gray-300 w-full py-1 rounded-lg font-medium hover:bg-black hover:text-white duration-200 ${
+                  className={`w-full rounded-lg border border-gray-300 py-1 font-medium text-gray-400 duration-200 hover:bg-black hover:text-white ${
                     sortBy === option ? "bg-black text-white" : ""
                   }`}
                 >
@@ -190,10 +225,10 @@ const ProductsPage = () => {
 
           {/* Sort Order */}
           <div>
-            <p className="text-sm uppercase font-semibold underline mb-2">
+            <p className="mb-2 text-sm font-semibold uppercase underline">
               Sort Order
             </p>
-            <div className="flex gap-2 w-full justify-between">
+            <div className="flex w-full justify-between gap-2">
               {[
                 { value: "", label: "Default" },
                 { value: "asc", label: "Low to high" },
@@ -202,7 +237,7 @@ const ProductsPage = () => {
                 <button
                   key={option.value}
                   onClick={() => setSortOrder(option.value)}
-                  className={`border text-gray-400 border-gray-300 w-full py-1 rounded-lg font-medium hover:bg-black hover:text-white duration-200 ${
+                  className={`w-full rounded-lg border border-gray-300 py-1 font-medium text-gray-400 duration-200 hover:bg-black hover:text-white ${
                     sortOrder === option.value ? "bg-black text-white" : ""
                   }`}
                 >
@@ -214,10 +249,10 @@ const ProductsPage = () => {
 
           {/* Price Range */}
           <div>
-            <p className="text-sm uppercase font-semibold underline mb-2">
+            <p className="mb-2 text-sm font-semibold uppercase underline">
               Price
             </p>
-            <div className="flex gap-2 justify-between">
+            <div className="flex justify-between gap-2">
               <input
                 type="number"
                 value={minPrice || ""}
@@ -226,7 +261,7 @@ const ProductsPage = () => {
                   setMinPrice(e.target.value ? Number(e.target.value) : null)
                 }
                 placeholder="Minimum"
-                className="mt-2 p-1 border border-gray-300 rounded w-full"
+                className="mt-2 w-full rounded border border-gray-300 p-1"
               />
               <input
                 type="number"
@@ -236,27 +271,27 @@ const ProductsPage = () => {
                   setMaxPrice(e.target.value ? Number(e.target.value) : null)
                 }
                 placeholder="Maximum"
-                className="mt-2 p-1 border border-gray-300 rounded w-full"
+                className="mt-2 w-full rounded border border-gray-300 p-1"
               />
             </div>
           </div>
 
           {/* Categories */}
           <div>
-            <p className="text-sm uppercase font-semibold underline mb-2">
+            <p className="mb-2 text-sm font-semibold uppercase underline">
               Categories
             </p>
             {categories.map((category) => (
               <div key={category.name}>
                 <h2
-                  className={`text-base font-medium text-start hover:underline cursor-pointer ${
+                  className={`cursor-pointer text-start text-base font-medium hover:underline ${
                     category.name === selectedCategory
-                      ? "text-red-500 underline font-bold"
+                      ? "font-bold text-red-500 underline"
                       : "text-gray-400"
                   }`}
                   onClick={() => {
                     setSelectedCategory(
-                      selectedCategory === category.name ? null : category.name
+                      selectedCategory === category.name ? null : category.name,
                     );
                     setSelectedSubcategory(null);
                   }}
@@ -268,7 +303,7 @@ const ProductsPage = () => {
                     {category.subcategories.map((subcategory) => (
                       <h3
                         key={subcategory}
-                        className={`ml-4 text-base font-medium text-start hover:underline cursor-pointer ${
+                        className={`ml-4 cursor-pointer text-start text-base font-medium hover:underline ${
                           subcategory === selectedSubcategory
                             ? "text-red-500 underline"
                             : "text-gray-400"
@@ -286,7 +321,7 @@ const ProductsPage = () => {
 
           {/* Brands */}
           <div>
-            <p className="text-sm uppercase font-semibold underline mb-2">
+            <p className="mb-2 text-sm font-semibold uppercase underline">
               Brands
             </p>
 
@@ -294,10 +329,10 @@ const ProductsPage = () => {
             {selectedBrands.map((brand) => (
               <div
                 key={brand}
-                className="flex items-center justify-between cursor-pointer"
+                className="flex cursor-pointer items-center justify-between"
                 onClick={() => removeBrand(brand)}
               >
-                <h2 className="text-base font-medium text-start text-red-500 underline">
+                <h2 className="text-start text-base font-medium text-red-500 underline">
                   {brand.toUpperCase()}
                 </h2>
                 <button
@@ -315,7 +350,7 @@ const ProductsPage = () => {
                 !selectedBrands.includes(brand) && ( // Only show brands that are not selected
                   <h2
                     key={brand}
-                    className={`text-base font-medium text-start hover:underline cursor-pointer ${
+                    className={`cursor-pointer text-start text-base font-medium hover:underline ${
                       selectedBrands.includes(brand)
                         ? "text-red-500"
                         : "text-gray-400"
@@ -324,7 +359,7 @@ const ProductsPage = () => {
                   >
                     {brand.toUpperCase()}
                   </h2>
-                )
+                ),
             )}
           </div>
         </div>
@@ -332,28 +367,28 @@ const ProductsPage = () => {
         {/* Right Side (Products) */}
         <div className="w-3/4">
           {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-3">
               {Array.from({ length: 12 }).map((_, i) => (
                 <ProductSkeleton key={i} />
               ))}
             </div>
           ) : products.length === 0 ? (
-            <ProductNotFound />
+            <ProductNotFound title="No products found" />
           ) : (
             <div>
               {/* Products */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+              <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-3">
                 {products.map((product) => (
-                  <ProductCard item={product} key={product?._id} />
+                  <ProductCard product={product} key={product?._id} />
                 ))}
               </div>
               {/* Pagination */}
-              <div className="flex justify-center items-center flex-wrap mt-6">
-                <div className="flex gap-2 mx-4 items-center justify-center flex-wrap">
+              <div className="mt-6 flex flex-wrap items-center justify-center">
+                <div className="mx-4 flex flex-wrap items-center justify-center gap-2">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="w-12 h-12 flex items-center justify-center border hover:bg-black hover:text-white border-gray-300 rounded disabled:opacity-50"
+                    className="flex h-12 w-12 items-center justify-center rounded border border-gray-300 hover:bg-black hover:text-white disabled:opacity-50"
                   >
                     <FaArrowLeft />
                   </button>
@@ -362,7 +397,7 @@ const ProductsPage = () => {
                   {currentPage > 3 && (
                     <button
                       onClick={() => handlePageChange(1)}
-                      className="p-2 w-12 h-12 text-center border border-gray-300 rounded hover:bg-black hover:text-white duration-200 text-gray-400"
+                      className="h-12 w-12 rounded border border-gray-300 p-2 text-center text-gray-400 duration-200 hover:bg-black hover:text-white"
                     >
                       1
                     </button>
@@ -382,9 +417,9 @@ const ProductsPage = () => {
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`p-2 w-12 h-12 text-center border border-gray-300 rounded hover:bg-black hover:text-white duration-200 ${
+                        className={`h-12 w-12 rounded border border-gray-300 p-2 text-center duration-200 hover:bg-black hover:text-white ${
                           page === currentPage
-                            ? "bg-black text-white border-black"
+                            ? "border-black bg-black text-white"
                             : "text-gray-400"
                         }`}
                       >
@@ -402,7 +437,7 @@ const ProductsPage = () => {
                   {currentPage < totalPages - 2 && (
                     <button
                       onClick={() => handlePageChange(totalPages)}
-                      className="p-2 w-12 h-12 text-center border border-gray-300 rounded hover:bg-black hover:text-white duration-200 text-gray-400"
+                      className="h-12 w-12 rounded border border-gray-300 p-2 text-center text-gray-400 duration-200 hover:bg-black hover:text-white"
                     >
                       {totalPages}
                     </button>
@@ -411,7 +446,7 @@ const ProductsPage = () => {
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="w-12 h-12 flex items-center justify-center border hover:bg-black hover:text-white border-gray-300 rounded disabled:opacity-50"
+                    className="flex h-12 w-12 items-center justify-center rounded border border-gray-300 hover:bg-black hover:text-white disabled:opacity-50"
                   >
                     <FaArrowRight />
                   </button>

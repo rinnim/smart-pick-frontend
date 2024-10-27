@@ -2,7 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { MdClose } from "react-icons/md";
+import Button from "./Button";
+import IconButton from "./IconButton";
 import PriceTimelineChart from "./PriceTimelineChart";
+
 const ProductCardWide = ({ product, handleClose }) => {
   const onClose = async () => {
     try {
@@ -12,8 +15,8 @@ const ProductCardWide = ({ product, handleClose }) => {
     }
   };
   return (
-    <div className="mx-auto max-w-screen-xl rounded-md border-b px-4 py-10 lg:px-0">
-      <div className="flex flex-col gap-10 p-5 md:flex-row">
+    <div className="mx-auto max-w-screen-xl rounded-md border-b py-10 lg:px-0">
+      <div className="flex flex-col gap-5 md:flex-row md:gap-10">
         <div className="flex items-center justify-center overflow-hidden rounded-xl border lg:w-auto">
           {/* product big image */}
           <Link href={`/product/${product?._id}`} className="cursor-pointer">
@@ -30,12 +33,12 @@ const ProductCardWide = ({ product, handleClose }) => {
         </div>
         {/* product details */}
         <div className="flex w-full flex-col gap-1">
-          <h2 className="text-xl font-bold">{product?.name}</h2> 
+          <h2 className="text-base font-bold md:text-2xl">{product?.name}</h2>
           {/* product tags */}
-          <div className="flex items-center gap-2">
+          <div className="mt-2 flex items-center gap-2 text-xs md:text-base">
             <Link
               href={`/product?category=${product?.category}`}
-              className="cursor-pointer rounded-full bg-[#f7f7f7] px-2 py-1 text-sm"
+              className="cursor-pointer rounded-full bg-[#f7f7f7] px-2 py-1 md:px-4 md:py-2"
             >
               Category:{" "}
               <span className="font-bold">
@@ -44,12 +47,12 @@ const ProductCardWide = ({ product, handleClose }) => {
             </Link>
             <Link
               href={`/product?category=${product?.category}&brand=${product?.brand}`}
-              className="cursor-pointer rounded-full bg-[#f7f7f7] px-2 py-1 text-sm"
+              className="cursor-pointer rounded-full bg-[#f7f7f7] px-2 py-1 md:px-4 md:py-2"
             >
               Brand:{" "}
               <span className="font-bold">{product?.brand.toUpperCase()}</span>
             </Link>
-            <p className="rounded-full bg-[#f7f7f7] px-4 py-2 text-sm">
+            <p className="rounded-full bg-[#f7f7f7] px-2 py-1 md:px-4 md:py-2">
               Status:{" "}
               <span className="font-bold">
                 {product?.stockStatus.toUpperCase()}
@@ -57,7 +60,7 @@ const ProductCardWide = ({ product, handleClose }) => {
             </p>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 text-base md:text-xl">
               <p className="text-md text-gray-500 line-through">
                 {product?.regularPrice === undefined || 0
                   ? ""
@@ -69,15 +72,15 @@ const ProductCardWide = ({ product, handleClose }) => {
             </div>
             <Link
               href={product?.url}
-              className="rounded-full bg-[#f7f7f7] px-4 py-2 text-sm"
+              className="rounded-full bg-[#f7f7f7] px-2 py-1 text-xs md:px-4 md:py-2 md:text-base"
             >
               Shop:{" "}
               <span className="font-bold">{product?.shop.toUpperCase()}</span>
             </Link>
           </div>
-          <p>
+          <p className="text-xs md:text-base">
             You are saving{" "}
-            <span className="text-base font-bold text-green-500">
+            <span className="font-bold text-green-500">
               ৳
               {product?.price === 0
                 ? 0
@@ -91,17 +94,10 @@ const ProductCardWide = ({ product, handleClose }) => {
           </div>
 
           <div className="flex w-full items-center justify-between gap-5">
-          {/* buy now */}
-            <div className="w-11/12 cursor-pointer rounded-full bg-[#f7f7f7] py-3 text-center text-xs font-semibold uppercase duration-200 hover:bg-black hover:text-white">
-              <Link href={product?.url || "#"}>buy now</Link>
-            </div>
+            {/* buy now */}
+            <Button className="w-11/12" text="buy now" href={product?.url} />
             {/* close button */}
-            <div
-              onClick={onClose}
-              className="ml-2 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#f7f7f7] duration-200 hover:bg-red-500 hover:text-white"
-            >
-              <MdClose />
-            </div>
+            <IconButton icon={<MdClose />} onClick={onClose} />
           </div>
         </div>
       </div>

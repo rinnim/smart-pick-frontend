@@ -1,24 +1,18 @@
 "use client";
-import menuCategories from "@/app/api/data/menu_categories";
 import { UserContext } from "@/app/UserContext";
 import Link from "next/link";
-import { useContext } from "react";
+import { useRouter } from "next/navigation";
+import { useContext, useState } from "react";
 import toast from "react-hot-toast";
 import { FiBookmark, FiHeart, FiSearch, FiUser } from "react-icons/fi";
 import { LuArrowLeftRight, LuLogIn, LuLogOut } from "react-icons/lu";
 import { MdOutlineSpaceDashboard } from "react-icons/md";
 
-function toTitleCase(str) {
-  return str
-    .toLowerCase()
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
 const Header = () => {
   const [state, setState] = useContext(UserContext);
-  
+  const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState("");
+
   const redirect = (url) => {
     if (!state.user) {
       window.location.href = "/user/login";
@@ -36,6 +30,14 @@ const Header = () => {
     }, 2000);
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const newSearchTerm = searchTerm.trim();
+    if (newSearchTerm) {
+      router.push(`/product?search=${encodeURIComponent(newSearchTerm)}`);
+    }
+  };
+
   return (
     <div>
       <div className="z-50 w-full bg-[#f7f7f7] pb-2 md:sticky md:top-0">
@@ -46,18 +48,24 @@ const Header = () => {
             <h1 className="text-2xl font-bold">SmartPick</h1>
           </Link>
           {/* SearchBar */}
-          <div className="flex w-full max-w-3xl">
+          <form onSubmit={handleSearch} className="flex w-full max-w-3xl">
             {/* Input */}
             <input
+              name="search"
               type="text"
               placeholder="Search products..."
-              className="w-11/12 rounded-full px-4 py-2 text-lg text-gray-900  ring-1 ring-inset ring-gray-300 placeholder:text-base placeholder:font-normal placeholder:tracking-wide placeholder:text-gray-400 focus:ring-1 focus:ring-black sm:text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-11/12 rounded-full px-5 py-2 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-lg placeholder:font-normal placeholder:tracking-wide placeholder:text-gray-400 focus:ring-1 focus:ring-black md:text-lg"
             />
             {/* Search Icon */}
-            <div className="ml-2 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-black text-white duration-200 hover:bg-red-500">
+            <button
+              type="submit"
+              className="ml-2 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-black text-white duration-200 hover:bg-red-500"
+            >
               <FiSearch />
-            </div>
-          </div>
+            </button>
+          </form>
           {/* Menubar */}
           <div className="flex items-center gap-x-6 text-2xl">
             {/* User Icon */}
@@ -135,13 +143,13 @@ const Header = () => {
                 </Link>
               </div>
               <div
-                class={`${category?.subCategories.length > 8 ? "grid grid-cols-2" : "w-48"} invisible absolute z-50 flex flex-col px-4 py-1 bg-slate-100 text-gray-800 group-hover:visible`}
+                class={`${category?.subCategories.length > 8 ? "grid grid-cols-2" : "w-48"} invisible absolute left-1/2 z-50 flex -translate-x-1/2 transform flex-col bg-slate-100 px-4 py-1 text-gray-800 group-hover:visible`}
               >
                 {category?.subCategories.map((subcategory) => (
                   <Link
                     href={`/product?category=${category?.name}&subcategory=${subcategory?.name}`}
                     key={subcategory?.name}
-                    class=" w-full block py-1 text-gray-500 hover:text-black md:mx-2"
+                    class="block w-full py-1 text-gray-500 hover:text-black md:mx-2"
                   >
                     {toTitleCase(subcategory?.name)}
                   </Link>

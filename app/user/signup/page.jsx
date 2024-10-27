@@ -1,89 +1,120 @@
 "use client";
+import axios from "axios";
 import Link from "next/link";
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa6";
-import { RxCross2 } from "react-icons/rx";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import Label from "../../ui/components/Label";
 
 const SignupPage = () => {
+  const [pageState, setPageState] = useState("signup");
   const [loading, setLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
 
-  // Handle form input changes
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  // Individual state variables for each form field
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [otp, setOtp] = useState("");
 
-  const handleRegistration = async (e) => {
+  const handleNext = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Check if passwords match
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       toast.error("Passwords do not match");
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch(
-        "https://smart-pick-backend.onrender.com/auth/user/register",
+      await toast.promise(
+        axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/user/signup/send-otp`, {
+          email,
+        }),
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+          loading: "Sending OTP",
+          success: (response) => {
+            if (response.status === 200) {
+              setPageState("verify-otp");
+              return "OTP sent successfully";
+            }
           },
-          body: JSON.stringify({
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            username: formData.username,
-            email: formData.email,
-            password: formData.password,
-          }),
-        },
+          error: (error) => {
+            console.error("Error sending OTP:", error);
+            return error.response?.data?.message || "Failed to send OTP. Please try again.";
+          },
+        }
       );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Something went wrong");
-      }
-
-      // Registration success: Show success toast and allow login
-      setShowModal(true);
-    } catch (err) {
-      toast.error(err.message || "Something went wrong");
+    } catch (error) {
+      console.error("Error sending OTP:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Toggle password visibility
+  const handleRegistration = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const otpResponse = await toast.promise(
+        axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/user/signup/verify-otp`, {
+          email,
+          otp,
+        }),
+        {
+          loading: "Verifying OTP",
+          success: "OTP verified successfully",
+          error: (error) => {
+            return error.response?.data?.message || "Failed to verify OTP. Please try again.";
+          },
+        }
+      );
+
+      if (otpResponse.status === 200) {
+        const registerResponse = await toast.promise(
+          axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/user/register`, {
+            firstName,
+            lastName,
+            username,
+            email,
+            password,
+          }),
+          {
+            loading: "Registering user",
+            success: "User registered successfully",
+            error: (error) => {
+              return error.response?.data?.message || "Failed to register user. Please try again.";
+            },
+          }
+        );
+
+        if (registerResponse.status === 200) {
+          setTimeout(() => {
+            window.location.href = "/user/login";
+          }, 1000);
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const togglePasswordVisibility = () => {
     setPasswordVisible(!passwordVisible);
   };
 
-  const toggleConfirmPasswordVisibility = () => {
-    setConfirmPasswordVisible(!confirmPasswordVisible);
-  };
-
-  return (
-    <div>
+  if (pageState === "signup") {
+    return (
       <div className="mx-auto my-10 max-w-screen-xl rounded-lg bg-gray-950 px-4 py-10 lg:px-0">
         <form
-          onSubmit={handleRegistration}
+          onSubmit={handleNext}
           className="mx-auto max-w-5xl px-10 pt-10 text-white lg:px-0"
         >
           <div className="border-b border-b-white/10 pb-5">
@@ -101,9 +132,9 @@ const SignupPage = () => {
                 <input
                   type="text"
                   name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="focus:ring-skyText mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 sm:text-sm sm:leading-6"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
                   required
                 />
               </div>
@@ -112,9 +143,9 @@ const SignupPage = () => {
                 <input
                   type="text"
                   name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="focus:ring-skyText mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 sm:text-sm sm:leading-6"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
                   required
                 />
               </div>
@@ -123,9 +154,9 @@ const SignupPage = () => {
                 <input
                   type="text"
                   name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  className="focus:ring-skyText mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 sm:text-sm sm:leading-6"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
                   required
                 />
               </div>
@@ -134,9 +165,9 @@ const SignupPage = () => {
                 <input
                   type="email"
                   name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="focus:ring-skyText mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 sm:text-sm sm:leading-6"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
                   required
                 />
               </div>
@@ -147,9 +178,9 @@ const SignupPage = () => {
                 <input
                   type={passwordVisible ? "text" : "password"}
                   name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="focus:ring-skyText mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 sm:text-sm sm:leading-6"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
                   required
                 />
                 <button
@@ -165,19 +196,19 @@ const SignupPage = () => {
               <div className="relative sm:col-span-3">
                 <Label title="Confirm Password" htmlFor="confirmPassword" />
                 <input
-                  type={confirmPasswordVisible ? "text" : "password"}
+                  type={passwordVisible ? "text" : "password"}
                   name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="focus:ring-skyText mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 sm:text-sm sm:leading-6"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
                   required
                 />
                 <button
                   type="button"
-                  onClick={toggleConfirmPasswordVisibility}
+                  onClick={togglePasswordVisibility}
                   className="absolute right-3 top-9 text-gray-400 hover:text-white"
                 >
-                  {confirmPasswordVisible ? <FaEyeSlash /> : <FaEye />}
+                  {passwordVisible ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
             </div>
@@ -195,57 +226,68 @@ const SignupPage = () => {
 
         <p className="pt-5 text-center text-sm leading-6 text-white">
           Already have an account?{" "}
-          <Link href="/user/login" className="font-semibold text-indigo-400">
+          <Link
+            href="/user/login"
+            className="font-semibold text-gray-200 underline decoration-[1px] underline-offset-2 duration-200 hover:text-white"
+          >
             Log in
           </Link>
         </p>
       </div>
-
-      {/* ToastContainer with provided configuration */}
-      <ToastContainer
-        position="top-center"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-      {/* Success Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="relative mx-auto flex max-w-md flex-col items-center rounded-lg bg-white p-6 shadow-lg">
-            {/* Close Button */}
-            <button
-              onClick={() => setShowModal(false)}
-              className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-            >
-              <RxCross2 size={20} />
-            </button>
-
-            {/* Modal Content */}
-            <h2 className="mb-4 text-2xl font-bold text-green-600">
-              Congratulation!
+    );
+  } else if (pageState === "verify-otp") {
+    return (
+      <div className="mx-auto my-10 max-w-screen-xl rounded-lg bg-gray-950 px-4 py-10 lg:px-0">
+        <form
+          onSubmit={handleRegistration}
+          className="mx-auto max-w-5xl px-10 pt-10 text-white lg:px-0"
+        >
+          <div className="border-b border-b-white/10 pb-5">
+            <h2 className="text-3xl font-semibold uppercase leading-7">
+              Verify OTP
             </h2>
-            <p className="mb-4 text-gray-700">
-              You have successfully signed up!
+            <p className="mt-1 text-sm leading-6 text-gray-400">
+              Verify OTP to complete your registration.
             </p>
-            <Link href="/user/login">
-              <button
-                className="flex items-center justify-center rounded-md bg-indigo-700 px-5 py-2 text-base font-bold uppercase tracking-wide text-gray-100 duration-200 hover:bg-indigo-600 hover:text-white"
-                onClick={() => setShowModal(false)}
-              >
-                Go to Login
-              </button>
-            </Link>
           </div>
-        </div>
-      )}
-    </div>
-  );
+          <div className="border-b border-b-white/10 pb-5">
+            <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-6">
+              <div className="relative sm:col-span-6">
+                <Label title="OTP" htmlFor="otp" />
+                <input
+                  type="text"
+                  name="otp"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+          <button
+            disabled={loading}
+            type="submit"
+            className={`mt-5 flex w-full items-center justify-center rounded-md py-2 text-base font-bold uppercase tracking-wide text-gray-300 duration-200 hover:bg-indigo-600 hover:text-white ${
+              loading ? "bg-gray-500 hover:bg-gray-500" : "bg-indigo-700"
+            }`}
+          >
+            {loading ? <FaSpinner className="my-1 animate-spin" /> : "signup"}
+          </button>
+        </form>
+
+        <p className="pt-5 text-center text-sm leading-6 text-white">
+          Do not received the OTP?{" "}
+          <button
+            onClick={handleNext}
+            className="font-semibold text-gray-200 underline decoration-[1px] underline-offset-2 duration-200 hover:text-white"
+          >
+            Resend OTP
+          </button>
+        </p>
+      </div>
+    );
+  }
 };
 
 export default SignupPage;
