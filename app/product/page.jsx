@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -22,6 +23,15 @@ function toTitleCase(str) {
 }
 
 const ProductsPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProductsPageContent />
+    </Suspense>
+  );
+};
+
+// Move all the existing component logic into a new component
+const ProductsPageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   

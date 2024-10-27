@@ -1,4 +1,5 @@
 "use client";
+import menuCategories from "../../api/data/menu_categories";
 import { UserContext } from "@/app/UserContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -7,6 +8,10 @@ import toast from "react-hot-toast";
 import { FiBookmark, FiHeart, FiSearch, FiUser } from "react-icons/fi";
 import { LuArrowLeftRight, LuLogIn, LuLogOut } from "react-icons/lu";
 import { MdOutlineSpaceDashboard } from "react-icons/md";
+
+const toTitleCase = (str) => {
+  return str.replace(/\b\w/g, (char) => char.toUpperCase());
+};
 
 const Header = () => {
   const [state, setState] = useContext(UserContext);
