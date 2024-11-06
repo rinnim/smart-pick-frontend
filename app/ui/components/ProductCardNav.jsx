@@ -191,7 +191,7 @@ const ProductCardNav = ({ product }) => {
       {isTrackingClicked && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="rounded-2xl bg-white p-6 shadow-lg">
-            <h3 className="mb-2 text-lg font-bold">Set Tracking Price</h3>
+            <h3 className="mb-2 text-lg font-bold">Set Your Expected Price</h3>
             <input
               type="text"
               value={trackingPrice}
