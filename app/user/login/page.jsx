@@ -21,7 +21,6 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
     // Determine if input is email or username
     const isEmail = usernameOrEmail.includes("@");
@@ -32,31 +31,33 @@ const LoginPage = () => {
     };
 
     try {
+      setLoading(true);
       await toast.promise(
-        axios.post("http://localhost:5000/auth/user/login", requestBody),
+        axios.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/user/login`,
+          requestBody,
+        ),
         {
           loading: "Logging in",
           success: (response) => {
             // set the user in the context
             setState({
-              user: response.data.user,
-              token: response.data.token,
+              user: response.data.data.user,
+              token: response.data.data.token,
             });
+
             // also save the user to local storage
-            window.localStorage.setItem("auth", JSON.stringify(response.data));
+            window.localStorage.setItem(
+              "auth",
+              JSON.stringify(response.data.data),
+            );
 
-            setTimeout(() => {
-              window.location.href = "/user/profile";
-            }, 1000);
-
-            return "Login successful";
+            // redirect to profile page
+            window.location.href = "/user/profile";
+            return response.data.message;
           },
           error: (error) => {
-            console.log("login error", error);
-            return (
-              error.response?.data?.message ||
-              "Login failed. Please check your credentials."
-            );
+            return error.response?.data?.message || error.message;
           },
         },
       );
@@ -76,7 +77,7 @@ const LoginPage = () => {
         >
           <div className="border-b border-b-white/10 pb-5">
             <h2 className="text-3xl font-semibold uppercase leading-7">
-              Login
+              User Login
             </h2>
             <p className="mt-1 text-sm leading-6 text-gray-400">
               Login to access your account.
@@ -125,7 +126,7 @@ const LoginPage = () => {
             {loading ? <FaSpinner className="my-1 animate-spin" /> : "login"}
           </button>
         </form>
-        <div className="flex flex-col justify-center gap-2 py-10 sm:flex-row">
+        <div className="flex flex-col justify-center gap-2 pt-10 sm:flex-row">
           <p className="text-center text-sm leading-6 text-gray-400">
             Forgot your password?{" "}
             <Link
@@ -145,6 +146,15 @@ const LoginPage = () => {
             </Link>
           </p>
         </div>
+        <p className="py-2 text-center text-sm leading-6 text-gray-400">
+          Are you an admin?{" "}
+          <Link
+            href="/admin/login"
+            className="font-semibold text-gray-200 underline decoration-[1px] underline-offset-2 duration-200 hover:text-white"
+          >
+            Login Here
+          </Link>
+        </p>
       </div>
     </div>
   );

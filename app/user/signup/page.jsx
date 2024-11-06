@@ -7,7 +7,7 @@ import { FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa6";
 import Label from "../../ui/components/Label";
 
 const SignupPage = () => {
-  const [pageState, setPageState] = useState("signup");
+  const [pageState, setPageState] = useState("get-data");
   const [loading, setLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
 
@@ -30,24 +30,31 @@ const SignupPage = () => {
       return;
     }
 
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      setLoading(false);
+      return;
+    }
+
     try {
       await toast.promise(
-        axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/user/signup/send-otp`, {
-          email,
-        }),
+        axios.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/user/signup/send-otp`,
+          {
+            email,
+          },
+        ),
         {
           loading: "Sending OTP",
           success: (response) => {
-            if (response.status === 200) {
-              setPageState("verify-otp");
-              return "OTP sent successfully";
-            }
+            setPageState("verify-otp");
+            return response.data.message;
           },
           error: (error) => {
             console.error("Error sending OTP:", error);
-            return error.response?.data?.message || "Failed to send OTP. Please try again.";
+            return error.response?.data?.message || error.message;
           },
-        }
+        },
       );
     } catch (error) {
       console.error("Error sending OTP:", error);
@@ -61,43 +68,30 @@ const SignupPage = () => {
     setLoading(true);
 
     try {
-      const otpResponse = await toast.promise(
-        axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/user/signup/verify-otp`, {
+      const registerResponse = await toast.promise(
+        axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/user/register`, {
+          firstName,
+          lastName,
+          username,
           email,
+          password,
           otp,
         }),
         {
-          loading: "Verifying OTP",
-          success: "OTP verified successfully",
-          error: (error) => {
-            return error.response?.data?.message || "Failed to verify OTP. Please try again.";
+          loading: "Registering user",
+          success: (response) => {
+            return response.data.message;
           },
-        }
+          error: (error) => {
+            return error.response?.data?.message || error.message;
+          },
+        },
       );
 
-      if (otpResponse.status === 200) {
-        const registerResponse = await toast.promise(
-          axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/user/register`, {
-            firstName,
-            lastName,
-            username,
-            email,
-            password,
-          }),
-          {
-            loading: "Registering user",
-            success: "User registered successfully",
-            error: (error) => {
-              return error.response?.data?.message || "Failed to register user. Please try again.";
-            },
-          }
-        );
-
-        if (registerResponse.status === 200) {
-          setTimeout(() => {
-            window.location.href = "/user/login";
-          }, 1000);
-        }
+      if (registerResponse.status === 200) {
+        setTimeout(() => {
+          window.location.href = "/user/login";
+        }, 1000);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -110,7 +104,7 @@ const SignupPage = () => {
     setPasswordVisible(!passwordVisible);
   };
 
-  if (pageState === "signup") {
+  if (pageState === "get-data") {
     return (
       <div className="mx-auto my-10 max-w-screen-xl rounded-lg bg-gray-950 px-4 py-10 lg:px-0">
         <form
@@ -119,7 +113,7 @@ const SignupPage = () => {
         >
           <div className="border-b border-b-white/10 pb-5">
             <h2 className="text-3xl font-semibold uppercase leading-7">
-              SignUp
+              User SignUp
             </h2>
             <p className="mt-1 text-sm leading-6 text-gray-400">
               SignUp to get started.
@@ -261,12 +255,13 @@ const SignupPage = () => {
                   onChange={(e) => setOtp(e.target.value)}
                   className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
                   required
+                  maxLength={6}
                 />
               </div>
             </div>
           </div>
           <button
-            disabled={loading}
+            disabled={loading || otp.length !== 6}
             type="submit"
             className={`mt-5 flex w-full items-center justify-center rounded-md py-2 text-base font-bold uppercase tracking-wide text-gray-300 duration-200 hover:bg-indigo-600 hover:text-white ${
               loading ? "bg-gray-500 hover:bg-gray-500" : "bg-indigo-700"

@@ -7,10 +7,10 @@ import {
   samsungLogo,
 } from "../../assets/index";
 
-import Title from "../components/Title";
-import HorizontalBar from "../components/HorizontalBar";
 import Image from "next/image";
 import Link from "next/link";
+import HorizontalBar from "../components/HorizontalBar";
+import Title from "../components/Title";
 
 const PopularBrands = () => {
   const popularBrands = [
@@ -23,23 +23,23 @@ const PopularBrands = () => {
   ];
 
   return (
-    <div className="p-0 max-w-screen-xl mx-auto py-10 px-4 lg:px-0">
+    <div className="mx-auto max-w-screen-xl p-0 px-4 py-10 lg:px-0">
       <div>
         <Title text="Popular Brands" />
         <HorizontalBar />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 mt-7 gap-2">
+      <div className="mt-7 grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6">
         {popularBrands.map(({ title, link, image }, index) => (
           <Link href={`/product/${link}`} key={index}>
             <div
-              className={`border rounded-lg border-gray-300 hover:bg-black hover:border-black duration-200 flex items-center justify-center px-6 py-5 cursor-pointer group`}
+              className={`group flex cursor-pointer items-center justify-center rounded-lg border border-gray-300 px-6 py-5 duration-200 hover:border-black hover:bg-black`}
             >
               <Image
                 height={100}
                 width={100}
                 src={image}
                 alt={title}
-                className="w-36 h-5 object-contain group-hover:filter group-hover:brightness-0 group-hover:invert duration-200"
+                className="h-5 w-36 object-contain duration-200 group-hover:brightness-0 group-hover:invert group-hover:filter"
               />
             </div>
           </Link>

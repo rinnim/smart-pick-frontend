@@ -5,6 +5,7 @@ import "./globals.css";
 import Footer from "./ui/components/Footer";
 import Header from "./ui/components/Header";
 import { UserProvider } from "./UserContext";
+import { ThemeProvider } from './context/ThemeContext';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -19,33 +20,35 @@ const geistMono = localFont({
 
 export default function RootLayout({ children }) {
   return (
-    <UserProvider>
-      <html lang="en">
-        <head>
-          <title>SmartPick | Find the best price</title>
-        </head>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <Header />
-          {children}
-          <Footer />
-          <Toaster
-            position="top-center"
-            reverseOrder={false}
-            gutter={8}
-            toastOptions={{
-              style: {
-                backgroundColor: "white",
-                color: "black",
-                padding: "20px",
-                borderRadius: "15px",
-                fontSize: "16px",
-              },
-            }}
-          />
-        </body>
-      </html>
-    </UserProvider>
+    <html lang="en">
+      <head>
+        <title>SmartPick | Find the best price</title>
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background`}
+      >
+        <UserProvider>
+          <ThemeProvider>
+            <Header />
+            {children}
+            <Footer />
+            <Toaster
+              position="top-center"
+              reverseOrder={false}
+              gutter={8}
+              toastOptions={{
+                style: {
+                  backgroundColor: "white",
+                  color: "black",
+                  padding: "20px",
+                  borderRadius: "15px",
+                  fontSize: "16px",
+                },
+              }}
+            />
+          </ThemeProvider>
+        </UserProvider>
+      </body>
+    </html>
   );
 }

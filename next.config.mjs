@@ -22,6 +22,14 @@ const nextConfig = {
         protocol: "https",
         hostname: "www.startech.com.bd",
       },
+      {
+        protocol: "https",
+        hostname: "www.ryans.com",
+      },
+      {
+        protocol: "https",
+        hostname: "ryans.com",
+      }
     ],
   },
 };

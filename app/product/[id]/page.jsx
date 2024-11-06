@@ -1,11 +1,13 @@
 "use client";
 import Loading from "@/app/ui/components/Loading";
 import PriceTimelineChart from "@/app/ui/components/PriceTimelineChart";
+import ProductCard from "@/app/ui/components/ProductCard";
 import ProductCardNav from "@/app/ui/components/ProductCardNav";
+import ProductNotFound from "@/app/ui/components/ProductNotFound";
+import ProductSkeleton from "@/app/ui/components/ProductSkeleton";
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
-
 import { useEffect, useState } from "react";
 
 const ProductDetailsPage = ({ params }) => {
@@ -14,7 +16,9 @@ const ProductDetailsPage = ({ params }) => {
   const [imgIndex, setImgIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [similarDifferentShopProducts, setSimilarDifferentShopProducts] =
+    useState([]);
+  const [similarSameShopProducts, setSimilarSameShopProducts] = useState([]);
   const handleImgClick = (index) => {
     setImgIndex(index);
   };
@@ -24,19 +28,72 @@ const ProductDetailsPage = ({ params }) => {
       const fetchProduct = async () => {
         try {
           const { data } = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/product/find/${id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/api/product/find/${id}`,
           );
-          setProduct(data);
-        } catch (err) {
-          setError(err.response?.data?.message || "Failed to fetch product");
+          setProduct(data.product);
+        } catch (error) {
+          setError(error.response?.data?.message || "Failed to fetch product");
         } finally {
           setLoading(false);
         }
       };
-
       fetchProduct();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (product) {
+      console.log(product);
+      const fetchSimilarDifferentShopProducts = async () => {
+        try {
+          const { data } = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/product/similar/different-shop`,
+            {
+              params: {
+                id: product._id,
+                limit: 8,
+              },
+            },
+          );
+          setSimilarDifferentShopProducts(data.products);
+        } catch (error) {
+          setError(
+            error.response?.data?.message || "Failed to fetch similar products",
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchSimilarDifferentShopProducts();
+    }
+  }, [product]);
+
+  useEffect(() => {
+    if (product) {
+      console.log(product);
+      const fetchSimilarSameShopProducts = async () => {
+        try {
+          const { data } = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/product/similar/same-shop`,
+            {
+              params: {
+                id: product._id,
+                limit: 8,
+              },
+            },
+          );
+          setSimilarSameShopProducts(data.products);
+        } catch (error) {
+          setError(
+            error.response?.data?.message || "Failed to fetch similar products",
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchSimilarSameShopProducts();
+    }
+  }, [product]);
 
   return (
     <>
@@ -110,7 +167,7 @@ const ProductDetailsPage = ({ params }) => {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <p className="text-xl text-gray-500 line-through">
-                    {product?.regularPrice === undefined || 0
+                    {product?.regularPrice === 0
                       ? ""
                       : "৳" + product?.regularPrice}
                   </p>
@@ -142,42 +199,53 @@ const ProductDetailsPage = ({ params }) => {
               </p>
               {/* key features */}
               {/* show only if there are features */}
-              {Object.entries(product.features).length > 0 && (
-                <div className="flex flex-col">
-                  <h3 className="text-lg font-bold">Key Features</h3>
-                  {Object?.entries(product?.features)
-                    .slice(0, 3) // Only take the first 3 features
-                    .map(([key, value]) => {
-                      const displayValue = value.split(/<br\s*\/?>/i)[0];
-                      return (
+              {product?.features &&
+                Object.entries(product?.features).length > 0 && (
+                  <div className="flex flex-col">
+                    <h3 className="text-lg font-bold">Key Features</h3>
+                    {Object?.entries(product?.features)
+                      .slice(0, 3) // Only take the first 3 features
+                      .map(([key, value]) => {
+                        const displayValue = value.split(/<br\s*\/?>/i)[0];
+                        return (
+                          <div
+                            key={key}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="font-semibold">{key}</div>
+                            <div
+                              className="mr-2"
+                              dangerouslySetInnerHTML={{
+                                __html: displayValue,
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    {/* Show warranty if it exists */}
+                    {product?.features?.Warranty && (
+                      <div className="flex items-center justify-between">
+                        <div className="font-semibold">Warranty</div>
                         <div
-                          key={key}
-                          className="flex items-center justify-between"
-                        >
-                          <div className="font-semibold">{key}</div>
-                          <div className="mr-2">{displayValue}</div>
-                        </div>
-                      );
-                    })}
-                  {/* Show warranty if it exists */}
-                  {product?.features?.Warranty && (
-                    <div className="flex items-center justify-between">
-                      <div className="font-semibold">Warranty</div>
-                      <div className="mr-2">{product.features.Warranty}</div>
-                    </div>
-                  )}
-                  <button
-                    onClick={() =>
-                      document
-                        .getElementById("specification")
-                        .scrollIntoView({ behavior: "smooth" })
-                    }
-                    className="text-blue-500 transition duration-300 hover:underline"
-                  >
-                    View More
-                  </button>
-                </div>
-              )}
+                          className="mr-2"
+                          dangerouslySetInnerHTML={{
+                            __html: product.features.Warranty,
+                          }}
+                        />
+                      </div>
+                    )}
+                    <button
+                      onClick={() =>
+                        document
+                          .getElementById("specification")
+                          .scrollIntoView({ behavior: "smooth" })
+                      }
+                      className="text-blue-500 transition duration-300 hover:underline"
+                    >
+                      View More
+                    </button>
+                  </div>
+                )}
               {/* buy now */}
               <div className="px-10">
                 <ProductCardNav product={product} />
@@ -198,34 +266,110 @@ const ProductDetailsPage = ({ params }) => {
           </div>
           {/* specification */}
           {/* show only if there are features */}
-          {Object.entries(product?.features).length > 0 && (
-            <div className="mt-10 flex">
-              <div
-                className="-mt-40 w-full overflow-hidden pt-40"
-                id="specification"
-              >
-                <h2 className="rounded-xl bg-[#f7f7f7] py-2 text-center text-xl font-semibold">
-                  Specification
-                </h2>
-                <table className="mt-2 min-w-full overflow-hidden">
-                  <tbody>
-                    {Object.entries(product.features).map(([key, value]) => (
-                      <tr
-                        key={key}
-                        className={`flex flex-col border-b border-gray-200 duration-200 hover:bg-[#f7f7f7] md:flex-row`}
-                      >
-                        <td className="flex-1 px-2 pt-2 font-bold md:p-4">{key}</td>
-                        <td
-                          className="flex-1 px-2 pb-2 md:p-4"
-                          dangerouslySetInnerHTML={{ __html: value }}
-                        />
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {product?.features &&
+            Object.entries(product?.features).length > 0 && (
+              <div className="mt-10 flex">
+                <div
+                  className="-mt-40 w-full overflow-hidden pt-40"
+                  id="specification"
+                >
+                  <h2 className="rounded-xl bg-[#f7f7f7] py-2 text-center text-xl font-semibold">
+                    Specification
+                  </h2>
+                  <table className="mt-2 min-w-full overflow-hidden">
+                    <tbody>
+                      {Object.entries(product.features).map(([key, value]) => (
+                        <tr
+                          key={key}
+                          className={`flex flex-col border-b border-gray-200 duration-200 hover:bg-[#f7f7f7] md:flex-row`}
+                        >
+                          <td className="flex-1 px-2 pt-2 font-bold md:p-4">
+                            {key}
+                          </td>
+                          <td
+                            className="flex-1 px-2 pb-2 md:p-4"
+                            dangerouslySetInnerHTML={{ __html: value }}
+                          />
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
+            )}
+
+          <div className="mt-10">
+            <h2 className="rounded-xl bg-[#f7f7f7] py-2 text-center text-xl font-semibold">
+              Similar Products From Other Shops
+            </h2>
+            <div className="mt-5">
+              {loading ? (
+                <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
+                  {Array.from({ length: 12 }).map((_, index) => (
+                    <div key={index}>
+                      <ProductSkeleton />
+                    </div>
+                  ))}
+                </div>
+              ) : similarDifferentShopProducts.length === 0 ? (
+                <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 py-10 text-center">
+                  <ProductNotFound
+                    title="No similar products found"
+                    className="my-0"
+                  />
+                </div>
+              ) : error ? (
+                <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 py-10 text-center">
+                  <ProductNotFound title={error} />
+                  <p className="text-lg leading-6 tracking-wide text-gray-500">
+                    Try refreshing the page or contact support.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
+                  {similarDifferentShopProducts?.map((product) => (
+                    <ProductCard product={product} key={product?._id} />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
+          <div className="mt-10">
+            <h2 className="rounded-xl bg-[#f7f7f7] py-2 text-center text-xl font-semibold">
+              Similar Products From Same Shop
+            </h2>
+            <div className="mt-5">
+              {loading ? (
+                <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
+                  {Array.from({ length: 12 }).map((_, index) => (
+                    <div key={index}>
+                      <ProductSkeleton />
+                    </div>
+                  ))}
+                </div>
+              ) : similarSameShopProducts.length === 0 ? (
+                <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 py-10 text-center">
+                  <ProductNotFound
+                    title="No similar products found"
+                    className="my-0"
+                  />
+                </div>
+              ) : error ? (
+                <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 py-10 text-center">
+                  <ProductNotFound title={error} />
+                  <p className="text-lg leading-6 tracking-wide text-gray-500">
+                    Try refreshing the page or contact support.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
+                  {similarSameShopProducts?.map((product) => (
+                    <ProductCard product={product} key={product?._id} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </>

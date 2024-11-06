@@ -5,38 +5,40 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import HorizontalBar from "../components/HorizontalBar";
 import ProductCard from "../components/ProductCard";
-import ProductSkeleton from "../components/ProductSkeleton";
 import ProductNotFound from "../components/ProductNotFound";
+import ProductSkeleton from "../components/ProductSkeleton";
 import Title from "../components/Title";
+import toast from "react-hot-toast";
 
 const PopularProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchProducts = async () => {
+  const fetchPopularProducts = async () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/product/find?limit=12`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/product/find?sortBy=popularity-high&limit=12`,
       );
-      setProducts(response.data.products);
+      setProducts(response.data.data.products);
       setLoading(false);
     } catch (error) {
       setError(error.message);
       setLoading(false);
+      toast.error(error.message);
     }
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchPopularProducts();
   }, []);
 
   return (
     <div className="mx-auto max-w-screen-xl px-4 py-10 lg:px-0">
       <div className="mb-10">
         <div className="flex items-center justify-between">
-          <Title text="Top Selling Products" />
+          <Title text="Popular Products" />
           <Link
             href="/product"
             className="group relative overflow-hidden font-medium"

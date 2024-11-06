@@ -13,6 +13,7 @@ import HorizontalBar from "../ui/components/HorizontalBar";
 import ProductCard from "../ui/components/ProductCard";
 import ProductNotFound from "../ui/components/ProductNotFound";
 import ProductSkeleton from "../ui/components/ProductSkeleton";
+import Pagination from "@/app/ui/components/Pagination";
 
 function toTitleCase(str) {
   return str
@@ -49,6 +50,7 @@ const ProductsPageContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState(null);
+  const [totalProducts, setTotalProducts] = useState(0);
 
   useEffect(() => {
     // Read query parameters from URL
@@ -101,8 +103,9 @@ const ProductsPageContent = () => {
             params: filterParams,
           },
         );
-        setProducts(response.data.products);
-        setTotalPages(response.data.totalPages);
+        setProducts(response.data.data.products);
+        setTotalProducts(response.data.data.totalProducts);
+        setTotalPages(response.data.data.totalPages);
         setLoading(false);
       } catch (err) {
         setError("Error fetching products");
@@ -161,7 +164,8 @@ const ProductsPageContent = () => {
     setCurrentPage(1);
   };
 
-  const handlePageChange = (page) => {
+  const handlePageChange = ({ selected }) => {
+    const page = selected + 1;
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
   };
@@ -386,82 +390,25 @@ const ProductsPageContent = () => {
             <ProductNotFound title="No products found" />
           ) : (
             <div>
-              {/* Products */}
+              {/* Products Grid */}
               <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-3">
                 {products.map((product) => (
                   <ProductCard product={product} key={product?._id} />
                 ))}
               </div>
-              {/* Pagination */}
-              <div className="mt-6 flex flex-wrap items-center justify-center">
-                <div className="mx-4 flex flex-wrap items-center justify-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="flex h-12 w-12 items-center justify-center rounded border border-gray-300 hover:bg-black hover:text-white disabled:opacity-50"
-                  >
-                    <FaArrowLeft />
-                  </button>
 
-                  {/* First Page Button */}
-                  {currentPage > 3 && (
-                    <button
-                      onClick={() => handlePageChange(1)}
-                      className="h-12 w-12 rounded border border-gray-300 p-2 text-center text-gray-400 duration-200 hover:bg-black hover:text-white"
-                    >
-                      1
-                    </button>
-                  )}
-
-                  {/* Ellipsis before current page range */}
-                  {currentPage > 4 && (
-                    <span className="text-gray-400">...</span>
-                  )}
-
-                  {/* Pages around the current page */}
-                  {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                    const page = currentPage - 1 + i; // Show up to 3 pages
-                    if (page < 1 || page > totalPages - 1) return null; // Skip invalid pages
-
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        className={`h-12 w-12 rounded border border-gray-300 p-2 text-center duration-200 hover:bg-black hover:text-white ${
-                          page === currentPage
-                            ? "border-black bg-black text-white"
-                            : "text-gray-400"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-
-                  {/* Ellipsis after current page range */}
-                  {currentPage < totalPages - 3 && (
-                    <span className="text-gray-400">...</span>
-                  )}
-
-                  {/* Last Page Button */}
-                  {currentPage < totalPages - 2 && (
-                    <button
-                      onClick={() => handlePageChange(totalPages)}
-                      className="h-12 w-12 rounded border border-gray-300 p-2 text-center text-gray-400 duration-200 hover:bg-black hover:text-white"
-                    >
-                      {totalPages}
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="flex h-12 w-12 items-center justify-center rounded border border-gray-300 hover:bg-black hover:text-white disabled:opacity-50"
-                  >
-                    <FaArrowRight />
-                  </button>
+              {/* Replace old pagination with new component */}
+              {!loading && products.length > 0 && (
+                <div className="mt-6">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    itemsPerPage={productsPerPage}
+                    totalItems={totalProducts} // Make sure you have this state
+                    onPageChange={handlePageChange}
+                  />
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
