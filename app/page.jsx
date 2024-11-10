@@ -1,21 +1,22 @@
-// import BannerCategories from "./ui/BannerCategories";
-import PopularBrands from "./ui/sections/PopularBrands";
-import PopularCategories from "./ui/sections/PopularCategories";
-import PopularProducts from "./ui/sections/PopularProducts";
-import PopularSearch from "./ui/sections/PopularSearch";
-import PopularOffers from "./ui/components/PopularOffers";
-import MostViewedProducts from "./ui/sections/MostViewedProducts";
+import Container from "@/app/ui/components/Container";
+import PopularOffers from "@/app/ui/components/PopularOffers";
+import MostViewedProducts from "@/app/ui/sections/MostViewedProducts";
+import PopularBrands from "@/app/ui/sections/PopularBrands";
+import PopularCategories from "@/app/ui/sections/PopularCategories";
+import PopularProducts from "@/app/ui/sections/PopularProducts";
+import PopularSearch from "@/app/ui/sections/PopularSearch";
+
 export default function Home() {
   return (
     <>
-      <div className="max-w-screen-xl mx-auto py-10 px-4  lg:px-0">
-        <PopularOffers /> 
+      <Container>
+        <PopularOffers />
         <PopularCategories />
         <PopularProducts />
         <MostViewedProducts />
         <PopularSearch />
         <PopularBrands />
-      </div>
+      </Container>
     </>
   );
 }

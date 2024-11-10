@@ -1,420 +1,347 @@
 "use client";
-
-import { Suspense } from "react";
+import brands from "@/app/api/data/brands";
+import menuCategories from "@/app/api/data/menu_categories";
+import shopOptions from "@/app/api/data/shop_options";
+import sortOptions from "@/app/api/data/sort_options";
+import stockOptions from "@/app/api/data/stock_options";
+import HorizontalBar from "@/app/ui/components/HorizontalBar";
+import Pagination from "@/app/ui/components/Pagination";
+import ProductCard from "@/app/ui/components/ProductCard";
+import ProductNotFound from "@/app/ui/components/ProductNotFound";
+import ProductSkeleton from "@/app/ui/components/ProductSkeleton";
+import SearchableDropdown from "@/app/ui/components/SearchableDropdown";
+import Title from "@/app/ui/components/Title";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
-import { RxCross2 } from "react-icons/rx";
+import toast from "react-hot-toast";
 
-import brands from "../api/data/brands";
-import categories from "../api/data/categories";
-import HorizontalBar from "../ui/components/HorizontalBar";
-import ProductCard from "../ui/components/ProductCard";
-import ProductNotFound from "../ui/components/ProductNotFound";
-import ProductSkeleton from "../ui/components/ProductSkeleton";
-import Pagination from "@/app/ui/components/Pagination";
-
-function toTitleCase(str) {
-  return str
-    .toLowerCase()
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-const ProductsPage = () => {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <ProductsPageContent />
-    </Suspense>
-  );
-};
-
-// Move all the existing component logic into a new component
-const ProductsPageContent = () => {
+const ProductPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  const [products, setProducts] = useState([]);
-  const [selectedBrands, setSelectedBrands] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-  const [minPrice, setMinPrice] = useState(null);
-  const [maxPrice, setMaxPrice] = useState(null);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [sortBy, setSortBy] = useState(null);
-  const [productsPerPage, setProductsPerPage] = useState(12);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState(null);
-  const [totalProducts, setTotalProducts] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(null);
+  const [totalProducts, setTotalProducts] = useState(null);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState("");
+  const [selectedShop, setSelectedShop] = useState("");
+  const [selectedStockStatus, setSelectedStockStatus] = useState("");
+  const [selectedSortOption, setSelectedSortOption] = useState("");
+  const [selectedMinPrice, setSelectedMinPrice] = useState("");
+  const [selectedMaxPrice, setSelectedMaxPrice] = useState("");
+
+  const categoryOptions = menuCategories.map((category) => category.name);
+  const getSubcategoryOptions = (category) => {
+    const selectedCat = menuCategories.find((cat) => cat.name === category);
+    return selectedCat ? selectedCat.subCategories.map((sub) => sub.name) : [];
+  };
+
+  const getQueryParams = () => {
+    const querySearchTerm = searchParams.get("search");
+    if (querySearchTerm) {
+      setSearchTerm(querySearchTerm);
+    }
+    const queryPage = searchParams.get("page") || 1;
+    if (queryPage) {
+      setCurrentPage(Number(queryPage));
+    }
+    const queryItemsPerPage = searchParams.get("limit") || 10;
+    if (queryItemsPerPage) {
+      setItemsPerPage(Number(queryItemsPerPage));
+    }
+    const queryCategory = searchParams.get("category");
+    if (queryCategory) {
+      setSelectedCategory(queryCategory);
+    }
+    const querySubcategory = searchParams.get("subcategory");
+    if (querySubcategory) {
+      setSelectedSubcategory(querySubcategory);
+    }
+    const queryBrand = searchParams.get("brands");
+    if (queryBrand) {
+      setSelectedBrand(queryBrand);
+    }
+    const queryShop = searchParams.get("shop");
+    if (queryShop) {
+      setSelectedShop(queryShop);
+    }
+    const queryStockStatus = searchParams.get("stockStatus");
+    if (queryStockStatus) {
+      setSelectedStockStatus(queryStockStatus);
+    }
+    const querySortOption = searchParams.get("sortBy");
+    if (querySortOption) {
+      setSelectedSortOption(querySortOption);
+    }
+    const queryMinPrice = searchParams.get("minPrice");
+    if (queryMinPrice) {
+      setSelectedMinPrice(queryMinPrice);
+    }
+    const queryMaxPrice = searchParams.get("maxPrice");
+    if (queryMaxPrice) {
+      setSelectedMaxPrice(queryMaxPrice);
+    }
+  };
 
   useEffect(() => {
-    // Read query parameters from URL
-    const category = searchParams.get("category");
-    const brands = searchParams.get("brands");
-    const minPriceParam = searchParams.get("minPrice");
-    const maxPriceParam = searchParams.get("maxPrice");
-    const subcategory = searchParams.get("subcategory");
-    const sortByParam = searchParams.get("sortBy");
-    const sortOrderParam = searchParams.get("sortOrder");
-    const productsPerPageParam = searchParams.get("productsPerPage");
-    const currentPageParam = searchParams.get("currentPage");
-    const search = searchParams.get("search");
-
-    // Set state based on URL parameters
-    setSelectedCategory(category || null);
-    setSelectedBrands(brands ? brands.split(",") : []);
-    setMinPrice(minPriceParam ? Number(minPriceParam) : null);
-    setMaxPrice(maxPriceParam ? Number(maxPriceParam) : null);
-    setSelectedSubcategory(subcategory || null);
-    setSortBy(sortByParam || null);
-    setSortOrder(sortOrderParam || null);
-    setProductsPerPage(
-      productsPerPageParam ? Number(productsPerPageParam) : 12,
-    );
-    setCurrentPage(currentPageParam ? Number(currentPageParam) : 1);
-    setSearch(search || "");
-
-    // Fetch products using the URL parameters
-    const fetchProducts = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const filterParams = {
-          category: category || undefined,
-          minPrice: minPriceParam || undefined,
-          maxPrice: maxPriceParam || undefined,
-          subcategory: subcategory || undefined,
-          sortBy: sortByParam || undefined,
-          sortOrder: sortOrderParam || undefined,
-          limit: productsPerPageParam || 12,
-          page: currentPageParam || 1,
-          brands: brands || undefined,
-          search: search || undefined,
-        };
-
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/product/find`,
-          {
-            params: filterParams,
-          },
-        );
-        setProducts(response.data.data.products);
-        setTotalProducts(response.data.data.totalProducts);
-        setTotalPages(response.data.data.totalPages);
-        setLoading(false);
-      } catch (err) {
-        setError("Error fetching products");
-        console.error(err);
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
+    getQueryParams();
+    fetchProducts(searchTerm);
   }, [searchParams]);
 
-  const updateQueryParams = () => {
-    const query = {
-      category: selectedCategory,
-      minPrice,
-      maxPrice,
-      subcategory: selectedSubcategory,
-      sortBy,
-      sortOrder,
-      productsPerPage,
-      currentPage,
-      search,
-    };
+  const fetchProducts = async (search = "") => {
+    const isSearching = search.trim() !== "";
 
-    if (selectedBrands.length > 0) {
-      query.brands = selectedBrands.join(",");
+    try {
+      setLoading(true);
+      await toast.promise(
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/product/find`, {
+          params: {
+            search: searchTerm,
+            page: currentPage,
+            limit: itemsPerPage,
+            category: selectedCategory,
+            subcategory: selectedSubcategory,
+            brands: selectedBrand,
+            shop: selectedShop,
+            stockStatus: selectedStockStatus,
+            sortBy: selectedSortOption,
+            minPrice: selectedMinPrice,
+            maxPrice: selectedMaxPrice,
+          },
+        }),
+        {
+          loading: isSearching ? "Searching products" : "Loading products",
+          success: (response) => {
+            setFilteredProducts(response.data.data.products);
+            setTotalPages(response.data.data.totalPages);
+            setTotalProducts(response.data.data.totalProducts);
+            return response.data.message;
+          },
+          error: (error) => {
+            console.error(error);
+            setError(error.response?.data?.message || error.message);
+            setFilteredProducts([]);
+            setTotalProducts(null);
+            setTotalPages(null);
+            setCurrentPage(1);
+            setTotalPages(null);
+            return error.response?.data?.message || error.message;
+          },
+        },
+      );
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
-
-    const searchParams = new URLSearchParams();
-    Object.entries(query).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        searchParams.append(key, value);
-      }
-    });
-
-    router.push(`/product?${searchParams}`);
   };
 
   useEffect(() => {
     updateQueryParams();
   }, [
-    selectedCategory,
-    selectedBrands,
-    minPrice,
-    maxPrice,
-    selectedSubcategory,
-    sortBy,
-    sortOrder,
-    productsPerPage,
+    itemsPerPage,
     currentPage,
-    search,
+    selectedSubcategory,
+    selectedBrand,
+    selectedShop,
+    selectedStockStatus,
+    selectedSortOption,
+    selectedMinPrice,
+    selectedMaxPrice,
   ]);
 
-  const handleProductsPerPageChange = (number) => {
-    setProductsPerPage(number);
+  useEffect(() => {
     setCurrentPage(1);
+    setSelectedSubcategory("");
+    updateQueryParams();
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    updateQueryParams();
+  }, [searchTerm]);
+
+  const updateQueryParams = () => {
+    const query = {
+      category: selectedCategory,
+      subcategory: selectedSubcategory,
+      brands: selectedBrand,
+      shop: selectedShop,
+      stockStatus: selectedStockStatus,
+      sortBy: selectedSortOption,
+      limit: itemsPerPage,
+      page: currentPage,
+      search: searchTerm,
+    };
+
+    const updatedSearchParams = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        updatedSearchParams.append(key, value);
+      }
+    });
+
+    router.push(`/product?${updatedSearchParams}`);
   };
 
   const handlePageChange = ({ selected }) => {
-    const page = selected + 1;
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
+    setCurrentPage(selected + 1);
+    updateQueryParams();
   };
 
-  const handleBrandChange = (brand) => {
-    if (selectedBrands.includes(brand)) {
-      setSelectedBrands((prev) => prev.filter((b) => b !== brand));
-    } else {
-      setSelectedBrands((prev) => [...prev, brand]);
-    }
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1);
+    updateQueryParams();
   };
 
-  const removeBrand = (brand) => {
-    setSelectedBrands((prev) => prev.filter((b) => b !== brand));
-  };
   return (
     <div className="mx-auto max-w-screen-xl px-4 py-10 lg:px-0">
-      <h2 className="text-center text-4xl font-semibold">
-        {search
-          ? `Search results for "${search}"`
-          : selectedCategory
-            ? toTitleCase(selectedCategory)
-            : "All Products"}
-      </h2>
-      <HorizontalBar className={"mb-10"} />
-
-      <div className="flex gap-10">
-        {/* Left Filters Section */}
-        <div className="flex w-1/4 flex-col gap-6 md:inline-flex">
-          <h2 className="text-3xl font-bold">Filters</h2>
-
-          {/* Products Per Page */}
-          <div>
-            <p className="mb-2 text-sm font-semibold uppercase underline">
-              Products Per Page
-            </p>
-            <div className="flex w-full justify-between gap-2">
-              {[12, 20, 40].map((number) => (
-                <button
-                  key={number}
-                  onClick={() => handleProductsPerPageChange(number)}
-                  className={`w-full rounded-lg border border-gray-300 py-1 font-medium text-gray-400 duration-200 hover:bg-black hover:text-white ${
-                    productsPerPage === number ? "bg-black text-white" : ""
-                  }`}
-                >
-                  {number}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Sort By */}
-          <div>
-            <p className="mb-2 text-sm font-semibold uppercase underline">
-              Sort By
-            </p>
-            <div className="flex w-full justify-between gap-2">
-              {["default", "price"].map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setSortBy(option === "default" ? "" : option)}
-                  className={`w-full rounded-lg border border-gray-300 py-1 font-medium text-gray-400 duration-200 hover:bg-black hover:text-white ${
-                    sortBy === option ? "bg-black text-white" : ""
-                  }`}
-                >
-                  {option === "default" ? "Default" : "Price"}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Sort Order */}
-          <div>
-            <p className="mb-2 text-sm font-semibold uppercase underline">
-              Sort Order
-            </p>
-            <div className="flex w-full justify-between gap-2">
-              {[
-                { value: "", label: "Default" },
-                { value: "asc", label: "Low to high" },
-                { value: "desc", label: "High to low" },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setSortOrder(option.value)}
-                  className={`w-full rounded-lg border border-gray-300 py-1 font-medium text-gray-400 duration-200 hover:bg-black hover:text-white ${
-                    sortOrder === option.value ? "bg-black text-white" : ""
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Price Range */}
-          <div>
-            <p className="mb-2 text-sm font-semibold uppercase underline">
-              Price
-            </p>
-            <div className="flex justify-between gap-2">
-              <input
-                type="number"
-                value={minPrice || ""}
-                min={0}
-                onChange={(e) =>
-                  setMinPrice(e.target.value ? Number(e.target.value) : null)
-                }
-                placeholder="Minimum"
-                className="mt-2 w-full rounded border border-gray-300 p-1"
-              />
-              <input
-                type="number"
-                value={maxPrice || ""}
-                min={0}
-                onChange={(e) =>
-                  setMaxPrice(e.target.value ? Number(e.target.value) : null)
-                }
-                placeholder="Maximum"
-                className="mt-2 w-full rounded border border-gray-300 p-1"
-              />
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div>
-            <p className="mb-2 text-sm font-semibold uppercase underline">
-              Categories
-            </p>
-            {categories.map((category) => (
-              <div key={category.name}>
-                <h2
-                  className={`cursor-pointer text-start text-base font-medium hover:underline ${
-                    category.name === selectedCategory
-                      ? "font-bold text-red-500 underline"
-                      : "text-gray-400"
-                  }`}
-                  onClick={() => {
-                    setSelectedCategory(
-                      selectedCategory === category.name ? null : category.name,
-                    );
-                    setSelectedSubcategory(null);
-                  }}
-                >
-                  {toTitleCase(category.name)}
-                </h2>
-                {selectedCategory === category.name && (
-                  <div>
-                    {category.subcategories.map((subcategory) => (
-                      <h3
-                        key={subcategory}
-                        className={`ml-4 cursor-pointer text-start text-base font-medium hover:underline ${
-                          subcategory === selectedSubcategory
-                            ? "text-red-500 underline"
-                            : "text-gray-400"
-                        }`}
-                        onClick={() => setSelectedSubcategory(subcategory)}
-                      >
-                        {toTitleCase(subcategory)}
-                      </h3>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Brands */}
-          <div>
-            <p className="mb-2 text-sm font-semibold uppercase underline">
-              Brands
-            </p>
-
-            {/* Display selected brands at the top */}
-            {selectedBrands.map((brand) => (
-              <div
-                key={brand}
-                className="flex cursor-pointer items-center justify-between"
-                onClick={() => removeBrand(brand)}
-              >
-                <h2 className="text-start text-base font-medium text-red-500 underline">
-                  {brand.toUpperCase()}
-                </h2>
-                <button
-                  onClick={() => removeBrand(brand)}
-                  className="text-gray-400 hover:text-red-500"
-                >
-                  <RxCross2 />
-                </button>
-              </div>
-            ))}
-
-            {/* Display clickable brand names for selection */}
-            {brands.map(
-              (brand) =>
-                !selectedBrands.includes(brand) && ( // Only show brands that are not selected
-                  <h2
-                    key={brand}
-                    className={`cursor-pointer text-start text-base font-medium hover:underline ${
-                      selectedBrands.includes(brand)
-                        ? "text-red-500"
-                        : "text-gray-400"
-                    }`}
-                    onClick={() => handleBrandChange(brand)}
-                  >
-                    {brand.toUpperCase()}
-                  </h2>
-                ),
-            )}
+      <div>
+        <Title text="Product List" />
+        <div className="flex items-center justify-between">
+          <p className="mt-2 text-xs tracking-wide text-gray-500 md:text-base">
+            These are the products listed in the platform
+          </p>
+          <div className="flex items-center gap-2">
+            <label htmlFor="itemsPerPage" className="text-sm text-gray-500">
+              Show
+            </label>
+            <select
+              id="itemsPerPage"
+              value={itemsPerPage}
+              onChange={handleItemsPerPageChange}
+              className="rounded-md border border-gray-200 px-2 py-1 text-sm focus:border-gray-500 focus:outline-none"
+            >
+              <option value={10}>10</option>
+              <option value={15}>15</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="text-sm text-gray-500">entries</span>
           </div>
         </div>
+        <HorizontalBar />
 
-        {/* Right Side (Products) */}
-        <div className="w-3/4">
-          {loading ? (
-            <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-3">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <ProductSkeleton key={i} />
-              ))}
-            </div>
-          ) : products.length === 0 ? (
-            <ProductNotFound title="No products found" />
-          ) : (
-            <div>
-              {/* Products Grid */}
-              <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-3">
-                {products.map((product) => (
-                  <ProductCard product={product} key={product?._id} />
-                ))}
-              </div>
+        {/* Search Box */}
+        <div className="mb-6 mt-4">
+          {/* Filter Dropdowns */}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            {/* Category Dropdown */}
+            <SearchableDropdown
+              options={categoryOptions}
+              value={selectedCategory}
+              onChange={(value) => {
+                setSelectedCategory(value);
+                setSelectedSubcategory("");
+                setCurrentPage(1);
+              }}
+              placeholder="All Categories"
+            />
 
-              {/* Replace old pagination with new component */}
-              {!loading && products.length > 0 && (
-                <div className="mt-6">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    itemsPerPage={productsPerPage}
-                    totalItems={totalProducts} // Make sure you have this state
-                    onPageChange={handlePageChange}
-                  />
-                </div>
-              )}
-            </div>
-          )}
+            {/* Subcategory Dropdown */}
+            <SearchableDropdown
+              options={getSubcategoryOptions(selectedCategory)}
+              value={selectedSubcategory}
+              onChange={(value) => {
+                setSelectedSubcategory(value);
+                setCurrentPage(1);
+              }}
+              placeholder="All Subcategories"
+              disabled={!selectedCategory}
+            />
+
+            {/* Brand Dropdown */}
+            <SearchableDropdown
+              options={brands}
+              value={selectedBrand}
+              onChange={(value) => {
+                setSelectedBrand(value);
+                setCurrentPage(1);
+              }}
+              placeholder="All Brands"
+            />
+
+            {/* Shop Dropdown */}
+            <SearchableDropdown
+              options={shopOptions}
+              value={selectedShop}
+              onChange={(value) => {
+                setSelectedShop(value);
+                setCurrentPage(1);
+              }}
+              placeholder="All Shops"
+            />
+
+            {/* Stock Status Dropdown */}
+            <SearchableDropdown
+              options={stockOptions}
+              value={selectedStockStatus}
+              onChange={(value) => {
+                setSelectedStockStatus(value);
+                setCurrentPage(1);
+              }}
+              placeholder="All Stock Status"
+            />
+
+            {/* Sort Dropdown */}
+            <SearchableDropdown
+              options={sortOptions.map((option) => option.label)}
+              value={
+                selectedSortOption
+                  ? sortOptions.find((opt) => opt.value === selectedSortOption)
+                      ?.label
+                  : ""
+              }
+              onChange={(label) => {
+                const option = sortOptions.find((opt) => opt.label === label);
+                setSelectedSortOption(option ? option.value : "");
+                setCurrentPage(1);
+              }}
+              placeholder="Sort By Default"
+            />
+          </div>
         </div>
       </div>
+
+      {/* Product List */}
+      <div className="">
+        {loading ? (
+          <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: itemsPerPage }).map((_, i) => (
+              <ProductSkeleton key={i} />
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <ProductNotFound title={error || "No products found"} />
+        ) : (
+          <div>
+            {/* Products Grid */}
+            <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
+              {filteredProducts.map((product) => (
+                <ProductCard product={product} key={product?._id} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        itemsPerPage={itemsPerPage}
+        totalItems={totalProducts}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 };
 
-export default ProductsPage;
+export default ProductPage;

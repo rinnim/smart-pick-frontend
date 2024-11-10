@@ -1,0 +1,37 @@
+/* PDF-specific styles */
+
+@media print {
+  .printContent {
+    padding: 20px;
+  }
+
+  .printTitle {
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .printTable {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .printTable th {
+    border: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+    padding: 8px 4px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .printTable td {
+    border: 1px solid #e5e7eb;
+    padding: 2px 4px;
+    text-align: left;
+    font-size: 13px;
+  }
+
+  .printTable tr:nth-child(even) {
+    background-color: #f9fafb;
+  }
+}

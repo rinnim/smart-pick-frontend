@@ -5,6 +5,7 @@ import ProductCard from "@/app/ui/components/ProductCard";
 import ProductCardNav from "@/app/ui/components/ProductCardNav";
 import ProductNotFound from "@/app/ui/components/ProductNotFound";
 import ProductSkeleton from "@/app/ui/components/ProductSkeleton";
+import ProductDetailsSkeleton from "@/app/ui/components/ProductDetailsSkeleton";
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
@@ -19,87 +20,82 @@ const ProductDetailsPage = ({ params }) => {
   const [similarDifferentShopProducts, setSimilarDifferentShopProducts] =
     useState([]);
   const [similarSameShopProducts, setSimilarSameShopProducts] = useState([]);
+  const similarProductsLimit = 8;
+
   const handleImgClick = (index) => {
     setImgIndex(index);
   };
 
+  const fetchProduct = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/product/find/${id}`,
+      );
+      setProduct(response.data.data.product);
+    } catch (error) {
+      setError(error.response?.data?.message || error.message);
+    }
+  };
+
+  const fetchSimilarDifferentShopProducts = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/product/similar/different-shop`,
+        {
+          params: {
+            id: product._id,
+            limit: similarProductsLimit,
+          },
+        },
+      );
+      setSimilarDifferentShopProducts(response.data.data.products);
+    } catch (error) {
+      setSimilarDifferentShopProducts([]);
+    }
+  };
+
+  const fetchSimilarSameShopProducts = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/product/similar/same-shop`,
+        {
+          params: {
+            id: product._id,
+            limit: similarProductsLimit,
+          },
+        },
+      );
+      setSimilarSameShopProducts(response.data.data.products);
+    } catch (error) {
+      setSimilarSameShopProducts([]);
+    }
+  };
+
   useEffect(() => {
     if (id) {
-      const fetchProduct = async () => {
-        try {
-          const { data } = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/product/find/${id}`,
-          );
-          setProduct(data.product);
-        } catch (error) {
-          setError(error.response?.data?.message || "Failed to fetch product");
-        } finally {
-          setLoading(false);
-        }
-      };
+      setLoading(true);
       fetchProduct();
     }
   }, [id]);
 
   useEffect(() => {
     if (product) {
-      console.log(product);
-      const fetchSimilarDifferentShopProducts = async () => {
-        try {
-          const { data } = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/product/similar/different-shop`,
-            {
-              params: {
-                id: product._id,
-                limit: 8,
-              },
-            },
-          );
-          setSimilarDifferentShopProducts(data.products);
-        } catch (error) {
-          setError(
-            error.response?.data?.message || "Failed to fetch similar products",
-          );
-        } finally {
-          setLoading(false);
-        }
-      };
       fetchSimilarDifferentShopProducts();
-    }
-  }, [product]);
-
-  useEffect(() => {
-    if (product) {
-      console.log(product);
-      const fetchSimilarSameShopProducts = async () => {
-        try {
-          const { data } = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/product/similar/same-shop`,
-            {
-              params: {
-                id: product._id,
-                limit: 8,
-              },
-            },
-          );
-          setSimilarSameShopProducts(data.products);
-        } catch (error) {
-          setError(
-            error.response?.data?.message || "Failed to fetch similar products",
-          );
-        } finally {
-          setLoading(false);
-        }
-      };
       fetchSimilarSameShopProducts();
+      setLoading(false);
     }
   }, [product]);
 
   return (
     <>
       {loading ? (
-        <div className="mx-auto max-w-screen-xl px-4 py-10 lg:px-0">
-          <Loading />
+        <ProductDetailsSkeleton product={product} />
+      ) : error ? (
+        <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 py-10 text-center">
+          <ProductNotFound title={error} />
+          <p className="text-lg leading-6 tracking-wide text-gray-500">
+            Try refreshing the page or contact support.
+          </p>
         </div>
       ) : (
         <div className="mx-auto max-w-screen-xl px-4 py-10 lg:px-0">
@@ -251,7 +247,7 @@ const ProductDetailsPage = ({ params }) => {
                 <ProductCardNav product={product} />
               </div>
               <div className="cursor-pointer rounded-full bg-[#f7f7f7] py-3 text-center text-xs font-semibold uppercase duration-200 hover:bg-black hover:text-white">
-                <Link href={product?.url || "#"}>buy now</Link>
+                <Link href={product?.url}>buy now</Link>
               </div>
             </div>
           </div>
@@ -278,7 +274,7 @@ const ProductDetailsPage = ({ params }) => {
                   </h2>
                   <table className="mt-2 min-w-full overflow-hidden">
                     <tbody>
-                      {Object.entries(product.features).map(([key, value]) => (
+                      {Object.entries(product?.features).map(([key, value]) => (
                         <tr
                           key={key}
                           className={`flex flex-col border-b border-gray-200 duration-200 hover:bg-[#f7f7f7] md:flex-row`}
@@ -305,11 +301,13 @@ const ProductDetailsPage = ({ params }) => {
             <div className="mt-5">
               {loading ? (
                 <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
-                  {Array.from({ length: 12 }).map((_, index) => (
-                    <div key={index}>
-                      <ProductSkeleton />
-                    </div>
-                  ))}
+                  {Array.from({ length: similarProductsLimit }).map(
+                    (_, index) => (
+                      <div key={index}>
+                        <ProductSkeleton />
+                      </div>
+                    ),
+                  )}
                 </div>
               ) : similarDifferentShopProducts.length === 0 ? (
                 <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 py-10 text-center">
@@ -317,13 +315,6 @@ const ProductDetailsPage = ({ params }) => {
                     title="No similar products found"
                     className="my-0"
                   />
-                </div>
-              ) : error ? (
-                <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 py-10 text-center">
-                  <ProductNotFound title={error} />
-                  <p className="text-lg leading-6 tracking-wide text-gray-500">
-                    Try refreshing the page or contact support.
-                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
@@ -341,11 +332,13 @@ const ProductDetailsPage = ({ params }) => {
             <div className="mt-5">
               {loading ? (
                 <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
-                  {Array.from({ length: 12 }).map((_, index) => (
-                    <div key={index}>
-                      <ProductSkeleton />
-                    </div>
-                  ))}
+                  {Array.from({ length: similarProductsLimit }).map(
+                    (_, index) => (
+                      <div key={index}>
+                        <ProductSkeleton />
+                      </div>
+                    ),
+                  )}
                 </div>
               ) : similarSameShopProducts.length === 0 ? (
                 <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 py-10 text-center">
@@ -353,13 +346,6 @@ const ProductDetailsPage = ({ params }) => {
                     title="No similar products found"
                     className="my-0"
                   />
-                </div>
-              ) : error ? (
-                <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 py-10 text-center">
-                  <ProductNotFound title={error} />
-                  <p className="text-lg leading-6 tracking-wide text-gray-500">
-                    Try refreshing the page or contact support.
-                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">

@@ -1,31 +1,35 @@
 "use client";
 import brands from "@/app/api/data/brands";
 import menuCategories from "@/app/api/data/menu_categories";
-import SearchableDropdown from "@/app/components/SearchableDropdown";
+import shopOptions from "@/app/api/data/shop_options";
+import sortOptions from "@/app/api/data/sort_options";
+import stockOptions from "@/app/api/data/stock_options";
 import HorizontalBar from "@/app/ui/components/HorizontalBar";
 import Pagination from "@/app/ui/components/Pagination";
 import ProductNotFound from "@/app/ui/components/ProductNotFound";
+import SearchableDropdown from "@/app/ui/components/SearchableDropdown";
 import Title from "@/app/ui/components/Title";
+import { formatDateToMonthDayYear } from "@/app/utils/formatDate";
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { FaTrash } from "react-icons/fa";
-import { IoClose, IoSearch } from "react-icons/io5";
+import { IoClose, IoDownload, IoSearch } from "react-icons/io5";
+import { useReactToPrint } from "react-to-print";
 import { UserContext } from "../../UserContext";
-
 const ProductsList = () => {
   const [state] = useContext(UserContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [deleteProductId, setDeleteProductId] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(null);
   const [totalProducts, setTotalProducts] = useState(null);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [totalFilteredProducts, setTotalFilteredProducts] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isSearch, setIsSearch] = useState(false);
@@ -34,27 +38,7 @@ const ProductsList = () => {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedShop, setSelectedShop] = useState("");
   const [selectedStockStatus, setSelectedStockStatus] = useState("");
-  const [selectedSort, setSelectedSort] = useState("");
-  const shopOptions = ["techland", "startech", "ryans"]; // Add more as needed
-  const stockOptions = [
-    "Call For Price",
-    "Discontinued",
-    "In Stock",
-    "Out Of Stock",
-    "Pre Order",
-    "Sold Out",
-    "Up Coming",
-  ];
-  const sortOptions = [
-    { value: "date-high", label: "Date: Newest to Oldest" },
-    { value: "date-low", label: "Date: Oldest to Newest" },
-    { value: "price-high", label: "Price: High to Low" },
-    { value: "price-low", label: "Price: Low to High" },
-    { value: "popularity-high", label: "Popularity: High to Low" },
-    { value: "popularity-low", label: "Popularity: Low to High" },
-    { value: "views-high", label: "Views: High to Low" },
-    { value: "views-low", label: "Views: Low to High" },
-  ];
+  const [selectedSortOption, setSelectedSortOption] = useState("");
 
   const categoryOptions = menuCategories.map((category) => category.name);
   const getSubcategoryOptions = (category) => {
@@ -73,7 +57,7 @@ const ProductsList = () => {
 
     try {
       await toast.promise(
-        axios.get(`http://localhost:5000/api/product/find`, {
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/product/find`, {
           params: {
             search,
             page: currentPage,
@@ -83,7 +67,7 @@ const ProductsList = () => {
             brands: selectedBrand,
             shop: selectedShop,
             stockStatus: selectedStockStatus,
-            sortBy: selectedSort,
+            sortBy: selectedSortOption,
           },
           headers: { Authorization: `Bearer ${state.token}` },
         }),
@@ -133,7 +117,7 @@ const ProductsList = () => {
     selectedBrand,
     selectedShop,
     selectedStockStatus,
-    selectedSort,
+    selectedSortOption,
   ]);
 
   useEffect(() => {
@@ -148,7 +132,7 @@ const ProductsList = () => {
     selectedBrand,
     selectedShop,
     selectedStockStatus,
-    selectedSort,
+    selectedSortOption,
   ]);
 
   const handleSearch = async (e) => {
@@ -201,10 +185,63 @@ const ProductsList = () => {
     setCurrentPage(1);
   };
 
+  const pdfRef = useRef(null);
+  const [allProducts, setAllProducts] = useState([]);
+  const [isPrintReady, setIsPrintReady] = useState(false);
+
+  const triggerPrint = useReactToPrint({
+    contentRef: pdfRef,
+    documentTitle: `Products_List_${formatDateToMonthDayYear(new Date())}`,
+    pageStyle: `
+      @page {
+        size: landscape;
+        margin: 20mm;
+      }
+    `,
+  });
+
+  useEffect(() => {
+    if (isPrintReady) {
+      triggerPrint();
+      setIsPrintReady(false);
+    }
+  }, [isPrintReady, allProducts]);
+
+  const handleGeneratePDF = async () => {
+    setIsPrintReady(false);
+    try {
+      const response = await toast.promise(
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/product/find`, {
+          params: {
+            search: searchTerm,
+            category: selectedCategory,
+            subcategory: selectedSubcategory,
+            brands: selectedBrand,
+            shop: selectedShop,
+            stockStatus: selectedStockStatus,
+            sort: selectedSortOption,
+          },
+          headers: { Authorization: `Bearer ${state.token}` },
+        }),
+        {
+          loading: "Preparing PDF",
+          success: "Your PDF is ready!",
+          error: (error) =>
+            error.response?.data?.message || "Failed to prepare PDF",
+        },
+      );
+      setAllProducts(response.data.data.products);
+      console.log(response.data.data.products);
+      setIsPrintReady(true);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-screen-xl px-4 py-10 lg:px-0">
       <div>
-        <Title text="Products List" />
+        <Title text="Product List" />
         <div className="flex items-center justify-between">
           <p className="mt-2 text-xs tracking-wide text-gray-500 md:text-base">
             These are the products listed in the platform
@@ -257,6 +294,15 @@ const ProductsList = () => {
               >
                 <IoSearch className="text-lg" />
                 Search
+              </button>
+              <button
+                type="button"
+                onClick={handleGeneratePDF}
+                disabled={loading}
+                className="flex items-center gap-2 rounded-lg bg-black px-4 py-2 font-medium text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed"
+              >
+                <IoDownload className="text-lg" />
+                Download PDF
               </button>
             </div>
 
@@ -323,14 +369,15 @@ const ProductsList = () => {
               <SearchableDropdown
                 options={sortOptions.map((option) => option.label)}
                 value={
-                  selectedSort
-                    ? sortOptions.find((opt) => opt.value === selectedSort)
-                        ?.label
+                  selectedSortOption
+                    ? sortOptions.find(
+                        (opt) => opt.value === selectedSortOption,
+                      )?.label
                     : ""
                 }
                 onChange={(label) => {
                   const option = sortOptions.find((opt) => opt.label === label);
-                  setSelectedSort(option ? option.value : "");
+                  setSelectedSortOption(option ? option.value : "");
                   setCurrentPage(1);
                 }}
                 placeholder="Sort By Default"
@@ -340,7 +387,7 @@ const ProductsList = () => {
         </div>
       </div>
 
-      {/* Products List Table */}
+      {/* Product List Table */}
       <div className="relative overflow-x-auto">
         <table className="w-full text-left text-gray-500">
           <thead className="bg-gray-50 text-xs uppercase text-gray-700 md:text-base">
@@ -451,7 +498,10 @@ const ProductsList = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="10" className="px-3 py-4 text-center text-gray-500">
+                <td
+                  colSpan="10"
+                  className="px-3 py-4 text-center text-gray-500"
+                >
                   <ProductNotFound title={error} />
                 </td>
               </tr>
@@ -500,6 +550,114 @@ const ProductsList = () => {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isPrintReady && (
+        <div ref={pdfRef} className="hidden print:block">
+          {/* PDF Header */}
+          <div className="mb-4 flex justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Product List</h1>
+              <p className="text-sm text-gray-500">
+                Generated on {formatDateToMonthDayYear(new Date())}
+              </p>
+              {searchTerm && (
+                <p className="text-sm text-gray-500">
+                  Search results for: &quot;{searchTerm}&quot;
+                </p>
+              )}
+              {selectedCategory && (
+                <p className="text-sm text-gray-500">
+                  Category: &quot;{selectedCategory}&quot;
+                </p>
+              )}
+              {selectedSubcategory && (
+                <p className="text-sm text-gray-500">
+                  Subcategory: &quot;{selectedSubcategory}&quot;
+                </p>
+              )}
+              {selectedBrand && (
+                <p className="text-sm text-gray-500">
+                  Brand: &quot;{selectedBrand}&quot;
+                </p>
+              )}
+              {selectedShop && (
+                <p className="text-sm text-gray-500">
+                  Shop: &quot;{selectedShop}&quot;
+                </p>
+              )}
+              {selectedStockStatus && (
+                <p className="text-sm text-gray-500">
+                  Stock Status: &quot;{selectedStockStatus}&quot;
+                </p>
+              )}
+              {selectedSortOption && (
+                <p className="text-sm text-gray-500">
+                  Sort By: &quot;{selectedSortOption}&quot;
+                </p>
+              )}
+            </div>
+            <div className="flex flex-col items-end">
+              <h1 className="text-xl font-bold">Smart Pick</h1>
+              <p className="text-sm text-gray-500">Find the best price</p>
+            </div>
+          </div>
+
+          {/* PDF Table */}
+          <table className="w-full border-collapse text-left text-xs">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 px-2">Name</th>
+                <th className="border border-gray-300 px-2">Brand</th>
+                <th className="border border-gray-300 px-2">Category</th>
+                <th className="border border-gray-300 px-2">Shop</th>
+                <th className="border border-gray-300 px-2">Special Price</th>
+                <th className="border border-gray-300 px-2">Regular Price</th>
+                <th className="border border-gray-300 px-2">Stock</th>
+                <th className="border border-gray-300 px-2">Favorites</th>
+                <th className="border border-gray-300 px-2">Views</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allProducts.map((product) => (
+                <tr key={product?._id} className="even:bg-gray-50">
+                  <td className="border border-gray-300 px-2">
+                    {product?.name}
+                  </td>
+                  <td className="border border-gray-300 px-2 uppercase">
+                    {product?.brand}
+                  </td>
+                  <td className="border border-gray-300 px-2 capitalize">
+                    {product?.category}
+                  </td>
+                  <td className="border border-gray-300 px-2 capitalize">
+                    {product?.shop}
+                  </td>
+                  <td className="border border-gray-300 px-2">
+                    ৳{product?.price}
+                  </td>
+                  <td className="border border-gray-300 px-2">
+                    ৳{product?.regularPrice}
+                  </td>
+                  <td className="border border-gray-300 px-2 capitalize">
+                    {product?.stockStatus}
+                  </td>
+                  <td className="border border-gray-300 px-2">
+                    {product?.totalFavorites}
+                  </td>
+                  <td className="border border-gray-300 px-2">
+                    {product?.totalClicks}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* PDF Footer */}
+          <div className="mt-4 text-sm text-gray-500">
+            Total Products: {allProducts.length}
           </div>
         </div>
       )}

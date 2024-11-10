@@ -1,8 +1,10 @@
 "use client";
+import Container from "@/app/ui/components/Container";
 import HorizontalBar from "@/app/ui/components/HorizontalBar";
 import ProductCardWide from "@/app/ui/components/ProductCardWide";
 import ProductCardWideSkeleton from "@/app/ui/components/ProductCardWideSkeleton";
 import ProductNotFound from "@/app/ui/components/ProductNotFound";
+import SubTitle from "@/app/ui/components/SubTitle";
 import Title from "@/app/ui/components/Title";
 import axios from "axios";
 import Link from "next/link";
@@ -10,81 +12,78 @@ import { useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { UserContext } from "../../UserContext";
 
-const Favorite = () => {
+const FavoriteListPage = () => {
   const [state, setState] = useContext(UserContext);
   const [favoriteProduct, setFavoriteProduct] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const productCount = 4;
+
+  // get favorite products
+  const getFavoriteProducts = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/user-actions/data`,
+        { headers: { Authorization: `Bearer ${state.token}` } },
+      );
+      setFavoriteProduct(response.data.data.favoriteList);
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+      setError(error.response?.data?.message || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const getFavoriteProducts = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/api/user-actions/data",
-          {
-            headers: { Authorization: `Bearer ${state.token}` },
-          },
-        );
-        setFavoriteProduct(response.data.favorites);
-        setLoading(false);
-      } catch (error) {
-        console.error(error);
-        toast.error(error.response?.data?.message || error.message);
-        setError(error.response?.data?.message || error.message);
-        setLoading(false);
-      }
-    };
     if (state.user) {
       getFavoriteProducts();
     }
   }, [state.token, state.user]);
 
+  // handle favorite
   const handleFavorite = async (product) => {
     try {
       await toast.promise(
         axios.post(
-          "http://localhost:5000/api/user-actions/favorites",
-          {
-            productId: product._id,
-          },
-          {
-            headers: { Authorization: `Bearer ${state.token}` },
-          },
+          `${process.env.NEXT_PUBLIC_API_URL}/api/user-actions/favoriteList`,
+          { productId: product._id },
+          { headers: { Authorization: `Bearer ${state.token}` } },
         ),
         {
-          loading: "Updating favorites",
+          loading: "Updating favorite list",
           success: (response) => {
+            // update user state
             setState((prev) => ({
               ...prev,
               user: {
                 ...prev.user,
-                favorites: response.data.favorites,
+                favoriteList: response.data.data.favoriteList,
               },
             }));
 
+            // update favorite product state
             setFavoriteProduct((prevProducts) =>
-              prevProducts.filter((p) => p._id !== product._id)
+              prevProducts.filter((p) => p._id !== product._id),
             );
 
-            // Update the entire auth object in local storage with updated favorites
+            // update auth object in local storage
             const updatedAuth = {
               ...JSON.parse(window.localStorage.getItem("auth")),
               user: {
                 ...state.user,
-                favorites: response.data.favorites,
+                favoriteList: response.data.data.favoriteList,
               },
             };
 
             window.localStorage.setItem("auth", JSON.stringify(updatedAuth));
 
-            // return product.name + " removed from favorites";
-            return "Product removed from favorites";
+            return response.data.message;
           },
           error: (error) => {
-            console.error(error);
             return error.response?.data?.message || error.message;
           },
-        }
+        },
       );
     } catch (error) {
       console.error(error);
@@ -92,29 +91,26 @@ const Favorite = () => {
   };
 
   return (
-    <div className="mx-auto max-w-screen-xl px-4 py-10 lg:px-0">
+    <Container>
+      {/* title and subtitle */}
       <div>
         <Title text="Favorite Products" />
-        <p className="mt-2 text-xs tracking-wide text-gray-500 md:text-base">
-          These are the products you have added to your favorite list
-        </p>
+        <SubTitle text="These are the products you have added to your favorite list" />
         <HorizontalBar />
       </div>
 
       {/* favorite products */}
       {loading ? (
-        <div className="">
-          {[...Array(4)].map((_, index) => (
-            <ProductCardWideSkeleton key={index} />
-          ))}
-        </div>
+        Array.from({ length: productCount }).map((_, index) => (
+          <ProductCardWideSkeleton key={index} />
+        ))
       ) : favoriteProduct?.length > 0 ? (
-        <div className="">
+        <div>
           {favoriteProduct?.map((product) => (
-            <ProductCardWide 
-              key={product?._id} 
-              product={product} 
-              handleClose={handleFavorite} 
+            <ProductCardWide
+              key={product?._id}
+              product={product}
+              handleClose={handleFavorite}
             />
           ))}
         </div>
@@ -139,8 +135,8 @@ const Favorite = () => {
           </Link>
         </div>
       )}
-    </div>
+    </Container>
   );
 };
 
-export default Favorite;
+export default FavoriteListPage;

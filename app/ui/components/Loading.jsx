@@ -28,7 +28,7 @@ const Loading = () => {
         `}
       </style>
       <div className="flex items-center justify-center">
-        {Array.from({ length: dotCount }, (_, index) => (
+        {Array.from({ length: dotCount }).map((_, index) => (
           <div
             key={index}
             className="dot m-1"

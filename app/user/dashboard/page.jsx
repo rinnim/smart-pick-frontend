@@ -1,4 +1,5 @@
 "use client";
+import Container from "@/app/ui/components/Container";
 import HorizontalBar from "@/app/ui/components/HorizontalBar";
 import ProductCardSmall from "@/app/ui/components/ProductCardSmall";
 import ProductCardSmallSkeleton from "@/app/ui/components/ProductCardSmallSkeleton";
@@ -18,33 +19,33 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // get user products data
+  const getUserProductsData = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5000/api/user-actions/data",
+        { headers: { Authorization: `Bearer ${state.token}` } },
+      );
+      console.log(response.data.data);
+      setFavoriteProduct(response.data.data.favoriteList);
+      setTrackingProduct(response.data.data.wishlist);
+      setCompareProduct(response.data.data.compares);
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+      setError(error.response?.data?.message || error.message);
+    }
+    setLoading(false);
+  };
+
+  //
   useEffect(() => {
-    const getUserProductsData = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/api/user-actions/data",
-          {
-            headers: { Authorization: `Bearer ${state.token}` },
-          },
-        );
-        setFavoriteProduct(response.data.favorites);
-        setTrackingProduct(response.data.trackings);
-        setCompareProduct(response.data.compares);
-        setLoading(false);
-      } catch (error) {
-        console.error(error);
-        toast.error(error.message);
-        setError(error.message);
-        setLoading(false);
-      }
-    };
     if (state.user) {
       getUserProductsData();
     }
   }, [state.token, state.user]);
 
   return (
-    <div className="mx-auto max-w-screen-xl px-4 py-10 lg:px-0">
+    <Container>
       {/* favorite products section */}
       <div>
         {/* title and view all link */}
@@ -86,23 +87,23 @@ const Dashboard = () => {
           </div>
         )}
       </div>
-      {/* tracking products section */}
+      {/* Wishlist section */}
       <div className="mt-10">
         {/* title and view all link */}
         <div>
           <div className="flex items-center justify-between">
-            <Title text="Tracking Products" />
+            <Title text="Wishlist" />
             <Link
               href="/user/tracking"
               className="group relative overflow-hidden text-sm font-medium md:text-base"
             >
-              View All Tracking Products
+              View All Wishlist
               <span className="absolute bottom-0 left-0 block h-[1px] w-full -translate-x-[100%] bg-gray-600 duration-300 group-hover:translate-x-0" />
             </Link>
           </div>
           <HorizontalBar />
         </div>
-        {/* tracking products */}
+        {/* Wishlist */}
         {loading ? (
           <div className="grid grid-cols-2 gap-5 pt-10 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
@@ -123,7 +124,7 @@ const Dashboard = () => {
           </div>
         ) : (
           <div className="mx-auto my-4 flex max-w-3xl flex-col items-center gap-3 py-12 text-center">
-            <ProductNotFound title="Nothing added to Tracking" />
+            <ProductNotFound title="Nothing added to Wishlist" />
           </div>
         )}
       </div>
@@ -168,7 +169,7 @@ const Dashboard = () => {
           </div>
         )}
       </div>
-    </div>
+    </Container>
   );
 };
 

@@ -1,36 +1,37 @@
 "use client";
+import FormInputField from "@/app/ui/components/FormInputField";
+import FormSubmitButton from "@/app/ui/components/FormSubmitButton";
+import HorizontalBar from "@/app/ui/components/HorizontalBar";
+import SubTitle from "@/app/ui/components/SubTitle";
+import TextAndUnderlineLinkText from "@/app/ui/components/TextAndUnderlineLinkText";
+import Title from "@/app/ui/components/Title";
+import { UserContext } from "@/app/UserContext";
 import axios from "axios";
-import Link from "next/link";
 import { useContext, useState } from "react";
 import { toast } from "react-hot-toast";
-import { FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa6";
-import "react-toastify/dist/ReactToastify.css";
-import Label from "../../ui/components/Label";
-import { UserContext } from "../../UserContext";
 
-const ChangePasswordPage = () => {
+const UserChangePasswordPage = () => {
   const [loading, setLoading] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [oldPasswordVisible, setOldPasswordVisible] = useState(false);
-  const [state, setState] = useContext(UserContext);
+  const [state] = useContext(UserContext);
 
-  const togglePasswordVisibility = () => {
-    setPasswordVisible(!passwordVisible);
-  };
-
-  const toggleOldPasswordVisibility = () => {
-    setOldPasswordVisible(!oldPasswordVisible);
-  };
-
-  const handleChangePassword = async (e) => {
+  // Handle change password
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
+    // Check if passwords match
     if (newPassword !== confirmNewPassword) {
       toast.error("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    // Check if password is at least 6 characters long
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters long");
       setLoading(false);
       return;
     }
@@ -43,20 +44,13 @@ const ChangePasswordPage = () => {
           { headers: { Authorization: `Bearer ${state.token}` } },
         ),
         {
-          loading: "Changing password",
+          loading: "Changing Password",
           success: (response) => {
-            if (response.status === 200) {
-              setTimeout(() => {
-                window.location.href = "/user/profile";
-              }, 1000);
-              return "Password changed successfully";
-            }
+            window.location.href = "/user/profile";
+            return response.data.message;
           },
           error: (error) => {
-            const errorMessage =
-              error.response?.data?.message ||
-              "Failed to change password. Please try again.";
-            return errorMessage;
+            return error.response?.data?.message || error.message;
           },
         },
       );
@@ -68,110 +62,65 @@ const ChangePasswordPage = () => {
   };
 
   return (
-    <>
-      <div>
-        <div className="mx-auto my-10 max-w-screen-xl rounded-lg bg-gray-950 px-4 py-10 lg:px-0">
-          <form
-            onSubmit={handleChangePassword}
-            className="mx-auto max-w-5xl px-10 pt-10 text-white lg:px-0"
-          >
-            <div className="border-b border-b-white/10 pb-5">
-              <h2 className="text-3xl font-semibold uppercase leading-7">
-                Change Password
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-gray-400">
-                Enter your old password and new password.
-              </p>
-            </div>
-            <div className="border-b border-b-white/10 pb-5">
-              <div className="mt-5 flex flex-col gap-x-6 gap-y-5">
-                {/* Old Password Field */}
-                <div className="relative">
-                  <Label title="Old Password" htmlFor="oldPassword" />
-                  <input
-                    type={oldPasswordVisible ? "text" : "password"}
-                    name="oldPassword"
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                    className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={toggleOldPasswordVisibility}
-                    className="absolute right-3 top-9 text-gray-400 hover:text-white"
-                  >
-                    {oldPasswordVisible ? <FaEyeSlash /> : <FaEye />}
-                  </button>
-                </div>
+    <div className="mx-auto my-10 max-w-screen-xl rounded-lg bg-gray-800 px-4 py-10 lg:px-0">
+      <div className="mx-auto max-w-5xl px-10 pt-10 text-white lg:px-0">
+        {/* Title and Subtitle */}
+        <div>
+          <Title text="Change Password" className="uppercase text-white" />
+          <SubTitle text="Enter your old password and new password." />
+          <HorizontalBar className="bg-white/10" />
+        </div>
 
-                {/* New Password Field */}
-                <div className="relative">
-                  <Label title="New Password" htmlFor="newPassword" />
-                  <input
-                    type={passwordVisible ? "text" : "password"}
-                    name="newPassword"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={togglePasswordVisibility}
-                    className="absolute right-3 top-9 text-gray-400 hover:text-white"
-                  >
-                    {passwordVisible ? <FaEyeSlash /> : <FaEye />}
-                  </button>
-                </div>
+        {/* Change Password Form */}
+        <form onSubmit={handleSubmit}>
+          <div className="flex flex-col gap-5">
+            {/* Old Password */}
+            <FormInputField
+              label="Old Password"
+              type="password"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              required={true}
+            />
+            {/* New Password */}
+            <FormInputField
+              label="New Password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required={true}
+            />
+            {/* Confirm New Password */}
+            <FormInputField
+              label="Confirm New Password"
+              type="password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              required={true}
+            />
+          </div>
+          <HorizontalBar className="bg-white/10" />
+          {/* Submit Button */}
+          <FormSubmitButton
+            loading={loading}
+            label="Change Password"
+            disabled={
+              !oldPassword || !newPassword || !confirmNewPassword || loading
+            }
+          />
+        </form>
 
-                {/* Confirm New Password Field */}
-                <div className="relative">
-                  <Label
-                    title="Confirm New Password"
-                    htmlFor="confirmNewPassword"
-                  />
-                  <input
-                    type={passwordVisible ? "text" : "password"}
-                    name="confirmNewPassword"
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    className="mt-2 block w-full rounded-md border-0 bg-white/5 px-4 py-1.5 text-white shadow-sm outline-none ring-1 ring-inset ring-white/10 focus:ring-white sm:text-sm sm:leading-6"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={togglePasswordVisibility}
-                    className="absolute right-3 top-9 text-gray-400 hover:text-white"
-                  >
-                    {passwordVisible ? <FaEyeSlash /> : <FaEye />}
-                  </button>
-                </div>
-              </div>
-            </div>
-            <button
-              disabled={loading}
-              type="submit"
-              className={`mt-5 flex w-full items-center justify-center rounded-md py-2 text-base font-bold uppercase tracking-wide text-gray-300 duration-200 hover:bg-indigo-600 hover:text-white ${
-                loading ? "bg-gray-500 hover:bg-gray-500" : "bg-indigo-700"
-              }`}
-            >
-              {loading ? <FaSpinner className="my-1 animate-spin" /> : "reset"}
-            </button>
-          </form>
-          <p className="-mt-2 py-10 text-center text-sm leading-6 text-gray-400">
-            Already changed your password?{" "}
-            <Link
-              href="/user/profile"
-              className="font-semibold text-gray-200 underline decoration-[1px] underline-offset-2 duration-200 hover:text-white"
-            >
-              Profile
-            </Link>
-          </p>
+        {/* Profile Link */}
+        <div className="mt-10">
+          <TextAndUnderlineLinkText
+            text="Already changed your password?"
+            linkText="Profile"
+            href="/user/profile"
+          />
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
-export default ChangePasswordPage;
+export default UserChangePasswordPage;

@@ -7,11 +7,9 @@ import {
   samsungLogo,
 } from "../../assets/index";
 
-import Image from "next/image";
-import Link from "next/link";
-import HorizontalBar from "../components/HorizontalBar";
-import Title from "../components/Title";
-
+import BrandItemChip from "../components/BrandItemChip";
+import Container from "../components/Container";
+import Headings from "../components/Headings";
 const PopularBrands = () => {
   const popularBrands = [
     { title: "Apple", link: "apple", image: appleLogo },
@@ -23,29 +21,19 @@ const PopularBrands = () => {
   ];
 
   return (
-    <div className="mx-auto max-w-screen-xl p-0 px-4 py-10 lg:px-0">
-      <div>
-        <Title text="Popular Brands" />
-        <HorizontalBar />
-      </div>
-      <div className="mt-7 grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6">
+    <Container>
+      <Headings title="Popular Brands" />
+      <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6">
         {popularBrands.map(({ title, link, image }, index) => (
-          <Link href={`/product/${link}`} key={index}>
-            <div
-              className={`group flex cursor-pointer items-center justify-center rounded-lg border border-gray-300 px-6 py-5 duration-200 hover:border-black hover:bg-black`}
-            >
-              <Image
-                height={100}
-                width={100}
-                src={image}
-                alt={title}
-                className="h-5 w-36 object-contain duration-200 group-hover:brightness-0 group-hover:invert group-hover:filter"
-              />
-            </div>
-          </Link>
+          <BrandItemChip
+            key={index}
+            title={title}
+            href={`/product?limit=10&page=1&brands=${link}`}
+            image={image}
+          />
         ))}
       </div>
-    </div>
+    </Container>
   );
 };
 

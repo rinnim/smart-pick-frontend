@@ -350,7 +350,7 @@ const PopularProducts = () => {
         </div>
       </div>
 
-      {/* Products List Table */}
+      {/* Product List Table */}
       <div className="relative overflow-x-auto">
         <table className="w-full text-left text-gray-500">
           <thead className="bg-gray-50 text-xs uppercase text-gray-700 md:text-base">

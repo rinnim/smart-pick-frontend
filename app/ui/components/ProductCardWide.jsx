@@ -6,7 +6,7 @@ import Button from "./Button";
 import IconButton from "./IconButton";
 import PriceTimelineChart from "./PriceTimelineChart";
 
-const ProductCardWide = ({ product, handleClose }) => {
+const ProductCardWide = ({ product, handleClose, expectedPrice = null }) => {
   const onClose = async () => {
     try {
       await handleClose(product);
@@ -78,6 +78,27 @@ const ProductCardWide = ({ product, handleClose }) => {
               <span className="font-bold">{product?.shop.toUpperCase()}</span>
             </Link>
           </div>
+
+          {expectedPrice && (
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 text-base md:text-xl">
+                <p className="text-md text-gray-500">Target Price:</p>
+                <p className="text-md font-bold">৳{expectedPrice}</p>
+              </div>
+              <div
+                className={`rounded-full font-bold ${
+                  product?.price <= expectedPrice
+                    ? "bg-green-500"
+                    : "bg-red-500"
+                } px-2 py-1 text-xs md:px-4 md:py-2 md:text-base`}
+              >
+                {product?.price <= expectedPrice
+                  ? "Target Reached"
+                  : "Target Not Reached"}
+              </div>
+            </div>
+          )}
+
           <p className="text-xs md:text-base">
             You are saving{" "}
             <span className="font-bold text-green-500">

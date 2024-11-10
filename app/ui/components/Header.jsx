@@ -93,20 +93,20 @@ const Header = () => {
             >
               <FiHeart className="cursor-pointer duration-200 hover:text-red-500" />
               <span className="absolute -right-2 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] text-white">
-                {state.user?.favorites?.length > 0
-                  ? state.user?.favorites?.length
+                {state.user?.favoriteList?.length > 0
+                  ? state.user?.favoriteList?.length
                   : "0"}
               </span>
             </div>
-            {/* Tracking Icon */}
+            {/* Wishlist Icon */}
             <div
               onClick={() => redirect("/tracking")}
               className="relative block"
             >
               <FiBookmark className="cursor-pointer duration-200 hover:text-red-500" />
               <span className="absolute -right-2 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] text-white">
-                {state.user?.trackings?.length > 0
-                  ? state.user?.trackings?.length
+                {state.user?.wishlist?.length > 0
+                  ? state.user?.wishlist?.length
                   : "0"}
               </span>
             </div>

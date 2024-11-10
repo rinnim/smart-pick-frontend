@@ -1,10 +1,8 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import HorizontalBar from "../components/HorizontalBar";
-import Title from "../components/Title";
-
+import CategoryCard from "@/app/ui/components/CategoryCard";
+import Container from "@/app/ui/components/Container";
+import Headings from "@/app/ui/components/Headings";
 const PopularCategories = () => {
   const categories = [
     {
@@ -82,44 +80,23 @@ const PopularCategories = () => {
   ];
 
   return (
-    <div className="max-w-screen-xl mx-auto py-10 px-4 lg:px-0">
-      <div className="mb-10">
-        <div className="flex items-center justify-between">
-          <Title text="Popular Categories" />
-          <Link
-            href={"/category/tvAndAudio"}
-            className="font-medium relative group overflow-hidden"
-          >
-            View All Categories
-            <span className="absolute bottom-0 left-0 w-full block h-[1px] bg-gray-600 -translate-x-[100%] group-hover:translate-x-0 duration-300" />
-          </Link>
-        </div>
-        <HorizontalBar />
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-7">
+    <Container>
+      <Headings
+        title="Popular Categories"
+        text="View All Categories"
+        href="/product?limit=10&page=1"
+      />
+      <div className="grid grid-cols-2 gap-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         {categories.map((item, index) => (
-          <Link
-            href={item?.href}
+          <CategoryCard
             key={index}
-            className="w-full h-auto relative group overflow-hidden rounded-md"
-          >
-            <div className="w-full h-full overflow-hidden">
-              <Image
-                height={400}
-                width={400}
-                priority
-                src={item?.image}
-                alt="categoryImage"
-                className="w-full h-auto group-hover:scale-110 duration-300 object-cover"
-              />
-              <div className="absolute bottom-3 w-full text-center">
-                <p className="text-sm md:text-base font-bold">{item?.name}</p>
-              </div>
-            </div>
-          </Link>
+            href={item?.href}
+            image={item?.image}
+            name={item?.name}
+          />
         ))}
       </div>
-    </div>
+    </Container>
   );
 };
 
